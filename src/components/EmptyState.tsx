@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { colors, shadows, spacing, borderRadius, typography } from '../constants/colors';
+import { View, Text } from "react-native";
 
 interface EmptyStateProps {
   icon?: string;
@@ -9,61 +8,25 @@ interface EmptyStateProps {
 }
 
 const EmptyState: React.FC<EmptyStateProps> = ({
-  icon = '🔍',
+  icon = "🔍",
   title,
   message,
 }) => {
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <View style={styles.iconContainer}>
-          <Text style={styles.icon}>{icon}</Text>
+    <View className="flex-1 items-center justify-center p-6">
+      <View className="bg-surface rounded-2xl p-8 items-center max-w-[320px] shadow-md">
+        <View className="w-20 h-20 rounded-full bg-background items-center justify-center mb-5">
+          <Text className="text-[40px]">{icon}</Text>
         </View>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.message}>{message}</Text>
+        <Text className="text-xl font-semibold text-text mb-2 text-center">
+          {title}
+        </Text>
+        <Text className="text-base text-text-secondary text-center">
+          {message}
+        </Text>
       </View>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing['2xl'],
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.xl,
-    padding: spacing['3xl'],
-    alignItems: 'center',
-    maxWidth: 320,
-    ...shadows.md,
-  },
-  iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xl,
-  },
-  icon: {
-    fontSize: 40,
-  },
-  title: {
-    ...typography.h3,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  message: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-});
 
 export default EmptyState;

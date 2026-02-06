@@ -2,67 +2,97 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   Linking,
   Alert,
   TouchableOpacity,
-} from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { Technician } from '../../src/types';
-import { getTechnicianById } from '../../src/services/storage';
-import { colors, shadows, spacing, borderRadius, typography } from '../../src/constants/colors';
-import { LoadingSpinner, EmptyState } from '../../src/components';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { Technician } from "../../src/types";
+import {
+  getTechnicianById,
+  toggleFavorite,
+  isFavorite as checkFavorite,
+} from "../../src/services/storage";
+import { skillColors } from "../../src/constants/colors";
+import { LoadingSpinner, EmptyState } from "../../src/components";
+
+const availabilityConfig: Record<
+  string,
+  { label: string; color: string; bg: string; icon: string }
+> = {
+  available: {
+    label: "Available Now",
+    color: "#059669",
+    bg: "#D1FAE5",
+    icon: "checkmark-circle",
+  },
+  busy: {
+    label: "Currently Busy",
+    color: "#D97706",
+    bg: "#FEF3C7",
+    icon: "time",
+  },
+  offline: { label: "Offline", color: "#94A3B8", bg: "#F1F5F9", icon: "moon" },
+};
 
 export default function TechnicianDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [technician, setTechnician] = useState<Technician | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isFav, setIsFav] = useState(false);
 
   useEffect(() => {
-    const loadTechnician = async () => {
+    const load = async () => {
       if (!id) return;
       try {
-        const data = await getTechnicianById(id);
+        const [data, favStatus] = await Promise.all([
+          getTechnicianById(id),
+          checkFavorite(id),
+        ]);
         setTechnician(data);
+        setIsFav(favStatus);
       } catch (error) {
-        console.error('Error loading technician:', error);
+        console.error("Error loading technician:", error);
       } finally {
         setLoading(false);
       }
     };
-
-    loadTechnician();
+    load();
   }, [id]);
+
+  const handleToggleFavorite = async () => {
+    if (!id) return;
+    try {
+      const result = await toggleFavorite(id);
+      setIsFav(result);
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+    }
+  };
 
   const handleCall = () => {
     if (!technician) return;
-
-    const phoneNumber = technician.phone.replace(/\s/g, '');
+    const phoneNumber = technician.phone.replace(/\s/g, "");
     const url = `tel:${phoneNumber}`;
-
     Linking.canOpenURL(url)
       .then((supported) => {
         if (supported) {
           Linking.openURL(url);
         } else {
           Alert.alert(
-            'Cannot Make Call',
-            'Phone calling is not supported on this device.',
-            [{ text: 'OK' }]
+            "Cannot Make Call",
+            "Phone calling is not supported on this device.",
+            [{ text: "OK" }],
           );
         }
       })
-      .catch((error) => {
-        console.error('Error opening phone app:', error);
-        Alert.alert('Error', 'Failed to open phone app.');
-      });
+      .catch(() => Alert.alert("Error", "Failed to open phone app."));
   };
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
+  if (loading) return <LoadingSpinner />;
 
   if (!technician) {
     return (
@@ -74,235 +104,222 @@ export default function TechnicianDetailsScreen() {
     );
   }
 
-  const skillColor = colors.skillColors[technician.skill];
+  const color = skillColors[technician.skill];
+  const avail =
+    availabilityConfig[technician.availability] || availabilityConfig.offline;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Profile Header */}
-      <View style={styles.profileCard}>
-        <View style={[styles.avatar, { backgroundColor: skillColor }]}>
-          <Text style={styles.avatarText}>
-            {technician.name
-              .split(' ')
-              .map((n) => n[0])
-              .join('')
-              .substring(0, 2)
-              .toUpperCase()}
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom"]}>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 40 }}
+      >
+        {/* Profile Header Card */}
+        <View className="bg-surface mx-4 mt-4 rounded-2xl p-6 items-center shadow-md">
+          {/* Favorite button */}
+          <TouchableOpacity
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-background items-center justify-center"
+            onPress={handleToggleFavorite}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={isFav ? "heart" : "heart-outline"}
+              size={22}
+              color={isFav ? "#EF4444" : "#94A3B8"}
+            />
+          </TouchableOpacity>
+
+          {/* Avatar */}
+          <View className="relative mb-4">
+            <View
+              className="w-24 h-24 rounded-full items-center justify-center shadow-lg"
+              style={{ backgroundColor: color }}
+            >
+              <Text className="text-[32px] font-bold text-surface">
+                {technician.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .substring(0, 2)
+                  .toUpperCase()}
+              </Text>
+            </View>
+            <View
+              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-[3px] border-surface items-center justify-center"
+              style={{ backgroundColor: avail.color }}
+            >
+              <Ionicons name={avail.icon as any} size={12} color="#FFFFFF" />
+            </View>
+          </View>
+
+          <Text className="text-2xl font-semibold text-text mb-2 text-center">
+            {technician.name}
           </Text>
-        </View>
-        <Text style={styles.name}>{technician.name}</Text>
-        <View style={[styles.skillBadge, { backgroundColor: `${skillColor}20` }]}>
-          <View style={[styles.skillDot, { backgroundColor: skillColor }]} />
-          <Text style={[styles.skillText, { color: skillColor }]}>{technician.skill}</Text>
-        </View>
-      </View>
 
-      {/* Details Card */}
-      <View style={styles.detailsCard}>
-        <Text style={styles.sectionTitle}>Contact Information</Text>
-        
-        <View style={styles.detailRow}>
-          <View style={[styles.detailIcon, { backgroundColor: colors.primaryMuted }]}>
-            <Ionicons name="location" size={20} color={colors.primary} />
+          {/* Skill badge + Availability */}
+          <View className="flex-row items-center gap-2 mb-3">
+            <View
+              className="flex-row items-center px-3 py-1.5 rounded-full gap-1.5"
+              style={{ backgroundColor: `${color}20` }}
+            >
+              <View
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: color }}
+              />
+              <Text className="text-sm font-semibold" style={{ color }}>
+                {technician.skill}
+              </Text>
+            </View>
+            <View
+              className="flex-row items-center px-3 py-1.5 rounded-full gap-1.5"
+              style={{ backgroundColor: avail.bg }}
+            >
+              <Text
+                className="text-sm font-medium"
+                style={{ color: avail.color }}
+              >
+                {avail.label}
+              </Text>
+            </View>
           </View>
-          <View style={styles.detailContent}>
-            <Text style={styles.detailLabel}>Location</Text>
-            <Text style={styles.detailValue}>{technician.location}, Cameroon</Text>
-          </View>
-        </View>
 
-        <View style={styles.divider} />
-
-        <View style={styles.detailRow}>
-          <View style={[styles.detailIcon, { backgroundColor: colors.successLight }]}>
-            <Ionicons name="call" size={20} color={colors.success} />
-          </View>
-          <View style={styles.detailContent}>
-            <Text style={styles.detailLabel}>Phone Number</Text>
-            <Text style={styles.detailValue}>{technician.phone}</Text>
-          </View>
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.detailRow}>
-          <View style={[styles.detailIcon, { backgroundColor: colors.warningLight }]}>
-            <Ionicons name="time" size={20} color={colors.warning} />
-          </View>
-          <View style={styles.detailContent}>
-            <Text style={styles.detailLabel}>Experience</Text>
-            <Text style={styles.detailValue}>
-              {technician.experienceYears} {technician.experienceYears === 1 ? 'year' : 'years'} of professional experience
+          {/* Rating */}
+          <View className="flex-row items-center gap-1.5 mb-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Ionicons
+                key={star}
+                name={
+                  star <= Math.round(technician.rating ?? 0)
+                    ? "star"
+                    : "star-outline"
+                }
+                size={20}
+                color="#F59E0B"
+              />
+            ))}
+            <Text className="text-base font-semibold text-text ml-1">
+              {(technician.rating ?? 0) > 0
+                ? technician.rating.toFixed(1)
+                : "New"}
+            </Text>
+            <Text className="text-sm text-text-muted">
+              ({technician.reviewCount ?? 0} reviews)
             </Text>
           </View>
         </View>
-      </View>
 
-      {/* Quick Stats */}
-      <View style={styles.statsCard}>
-        <View style={styles.statItem}>
-          <Ionicons name="star" size={24} color={colors.warning} />
-          <Text style={styles.statValue}>Verified</Text>
-          <Text style={styles.statLabel}>Professional</Text>
+        {/* Stats Row */}
+        <View className="flex-row mx-4 mt-3 gap-3">
+          <View className="flex-1 bg-surface rounded-xl py-4 items-center shadow-sm">
+            <Text className="text-xl font-bold text-primary">
+              {technician.experienceYears}
+            </Text>
+            <Text className="text-xs font-medium text-text-muted mt-0.5">
+              Years Exp.
+            </Text>
+          </View>
+          <View className="flex-1 bg-surface rounded-xl py-4 items-center shadow-sm">
+            <Text className="text-xl font-bold text-primary">
+              {technician.jobsCompleted ?? 0}
+            </Text>
+            <Text className="text-xs font-medium text-text-muted mt-0.5">
+              Jobs Done
+            </Text>
+          </View>
+          <View className="flex-1 bg-surface rounded-xl py-4 items-center shadow-sm">
+            <Text className="text-xl font-bold text-primary">
+              {(technician.hourlyRate ?? 0).toLocaleString()}
+            </Text>
+            <Text className="text-xs font-medium text-text-muted mt-0.5">
+              XAF/hr
+            </Text>
+          </View>
         </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Ionicons name="shield-checkmark" size={24} color={colors.success} />
-          <Text style={styles.statValue}>Trusted</Text>
-          <Text style={styles.statLabel}>Service</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Ionicons name="location" size={24} color={colors.primary} />
-          <Text style={styles.statValue}>Local</Text>
-          <Text style={styles.statLabel}>Expert</Text>
-        </View>
-      </View>
 
-      {/* Call Button */}
-      <TouchableOpacity style={styles.callButton} onPress={handleCall} activeOpacity={0.8}>
-        <Ionicons name="call" size={24} color={colors.surface} />
-        <Text style={styles.callButtonText}>Call {technician.name.split(' ')[0]}</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        {/* Bio */}
+        {technician.bio ? (
+          <View className="bg-surface mx-4 mt-3 rounded-2xl p-5 shadow-sm">
+            <Text className="text-xs font-medium text-text-muted uppercase mb-3 tracking-widest">
+              About
+            </Text>
+            <Text className="text-base text-text-secondary leading-6">
+              {technician.bio}
+            </Text>
+          </View>
+        ) : null}
+
+        {/* Contact Info */}
+        <View className="bg-surface mx-4 mt-3 rounded-2xl p-5 shadow-sm">
+          <Text className="text-xs font-medium text-text-muted uppercase mb-4 tracking-widest">
+            Contact Information
+          </Text>
+
+          <View className="flex-row items-center py-2">
+            <View className="w-11 h-11 rounded-lg items-center justify-center mr-4 bg-primary-muted">
+              <Ionicons name="location" size={20} color="#1E40AF" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-xs font-medium text-text-muted mb-0.5">
+                Location
+              </Text>
+              <Text className="text-base font-medium text-text">
+                {technician.location}, Cameroon
+              </Text>
+            </View>
+          </View>
+
+          <View className="h-px bg-border-light my-3" />
+
+          <View className="flex-row items-center py-2">
+            <View className="w-11 h-11 rounded-lg items-center justify-center mr-4 bg-success-light">
+              <Ionicons name="call" size={20} color="#059669" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-xs font-medium text-text-muted mb-0.5">
+                Phone Number
+              </Text>
+              <Text className="text-base font-medium text-text">
+                {technician.phone}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Action Buttons */}
+        <View className="mx-4 mt-4 gap-3">
+          <TouchableOpacity
+            className="bg-success rounded-xl py-4 flex-row items-center justify-center gap-3 shadow-lg"
+            onPress={handleCall}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="call" size={22} color="#FFFFFF" />
+            <Text className="text-lg font-semibold text-surface">
+              Call {technician.name.split(" ")[0]}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className={`rounded-xl py-4 flex-row items-center justify-center gap-3 border-2 ${
+              isFav
+                ? "bg-danger-light border-danger"
+                : "bg-surface border-border"
+            }`}
+            onPress={handleToggleFavorite}
+            activeOpacity={0.8}
+          >
+            <Ionicons
+              name={isFav ? "heart" : "heart-outline"}
+              size={22}
+              color={isFav ? "#DC2626" : "#475569"}
+            />
+            <Text
+              className={`text-lg font-semibold ${isFav ? "text-danger" : "text-text-secondary"}`}
+            >
+              {isFav ? "Remove from Favorites" : "Add to Favorites"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    padding: spacing.lg,
-    paddingBottom: spacing['4xl'],
-  },
-  profileCard: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.xl,
-    padding: spacing['2xl'],
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-    ...shadows.md,
-  },
-  avatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.lg,
-    ...shadows.lg,
-  },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: colors.surface,
-  },
-  name: {
-    ...typography.h2,
-    color: colors.text,
-    marginBottom: spacing.md,
-    textAlign: 'center',
-  },
-  skillBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-    gap: spacing.sm,
-  },
-  skillDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  skillText: {
-    ...typography.bodyMedium,
-  },
-  detailsCard: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.xl,
-    padding: spacing.xl,
-    marginBottom: spacing.lg,
-    ...shadows.sm,
-  },
-  sectionTitle: {
-    ...typography.caption,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    marginBottom: spacing.lg,
-    letterSpacing: 1,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-  },
-  detailIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.lg,
-  },
-  detailContent: {
-    flex: 1,
-  },
-  detailLabel: {
-    ...typography.caption,
-    color: colors.textMuted,
-    marginBottom: 2,
-  },
-  detailValue: {
-    ...typography.bodyMedium,
-    color: colors.text,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.borderLight,
-    marginVertical: spacing.md,
-  },
-  statsCard: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.xl,
-    padding: spacing.xl,
-    flexDirection: 'row',
-    marginBottom: spacing['2xl'],
-    ...shadows.sm,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  statValue: {
-    ...typography.bodyMedium,
-    color: colors.text,
-  },
-  statLabel: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: colors.borderLight,
-    marginHorizontal: spacing.md,
-  },
-  callButton: {
-    backgroundColor: colors.success,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.md,
-    ...shadows.lg,
-  },
-  callButtonText: {
-    ...typography.h3,
-    color: colors.surface,
-  },
-});

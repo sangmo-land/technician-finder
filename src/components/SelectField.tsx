@@ -1,14 +1,6 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Modal,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, shadows, spacing, borderRadius, typography } from '../constants/colors';
+import { View, Text, TouchableOpacity, ScrollView, Modal } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 interface SelectFieldProps<T extends string> {
   label: string;
@@ -24,7 +16,7 @@ function SelectField<T extends string>({
   value,
   options,
   onSelect,
-  placeholder = 'Select an option',
+  placeholder = "Select an option",
   error,
 }: SelectFieldProps<T>) {
   const [modalVisible, setModalVisible] = React.useState(false);
@@ -35,20 +27,28 @@ function SelectField<T extends string>({
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+    <View className="mb-4">
+      <Text className="text-xs font-semibold text-text mb-2 uppercase tracking-wide">
+        {label}
+      </Text>
       <TouchableOpacity
-        style={[styles.selectButton, error && styles.selectButtonError]}
+        className={`bg-background border-[1.5px] rounded-xl px-4 py-3 flex-row justify-between items-center ${
+          error ? "border-danger bg-danger-light" : "border-border"
+        }`}
         onPress={() => setModalVisible(true)}
       >
-        <Text style={[styles.selectText, !value && styles.placeholderText]}>
+        <Text
+          className={`text-base ${value ? "text-text" : "text-text-light"}`}
+        >
           {value || placeholder}
         </Text>
-        <View style={styles.arrowContainer}>
-          <Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+        <View className="w-7 h-7 rounded-full bg-surface items-center justify-center">
+          <Ionicons name="chevron-down" size={18} color="#475569" />
         </View>
       </TouchableOpacity>
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error && (
+        <Text className="text-xs font-medium text-danger mt-1">{error}</Text>
+      )}
 
       <Modal
         visible={modalVisible}
@@ -57,40 +57,48 @@ function SelectField<T extends string>({
         onRequestClose={() => setModalVisible(false)}
       >
         <TouchableOpacity
-          style={styles.modalOverlay}
+          className="flex-1 justify-end"
+          style={{ backgroundColor: "rgba(15, 23, 42, 0.6)" }}
           activeOpacity={1}
           onPress={() => setModalVisible(false)}
         >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{label}</Text>
+          <View className="bg-surface rounded-t-2xl max-h-[70%] shadow-xl">
+            <View className="flex-row justify-between items-center p-5 border-b border-border-light">
+              <Text className="text-xl font-semibold text-text">{label}</Text>
               <TouchableOpacity
-                style={styles.closeButton}
+                className="w-10 h-10 rounded-full bg-background items-center justify-center"
                 onPress={() => setModalVisible(false)}
               >
-                <Ionicons name="close" size={24} color={colors.textSecondary} />
+                <Ionicons name="close" size={24} color="#475569" />
               </TouchableOpacity>
             </View>
-            <ScrollView style={styles.optionsList} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              className="px-4 py-3"
+              showsVerticalScrollIndicator={false}
+            >
               {options.map((option) => (
                 <TouchableOpacity
                   key={option}
-                  style={[
-                    styles.optionItem,
-                    value === option && styles.optionItemSelected,
-                  ]}
+                  className={`flex-row items-center justify-between py-4 px-3 rounded-xl mb-1 ${
+                    value === option ? "bg-primary-muted" : ""
+                  }`}
                   onPress={() => handleSelect(option)}
                 >
                   <Text
-                    style={[
-                      styles.optionText,
-                      value === option && styles.optionTextSelected,
-                    ]}
+                    className={`text-base ${
+                      value === option
+                        ? "font-medium text-primary"
+                        : "text-text"
+                    }`}
                   >
                     {option}
                   </Text>
                   {value === option && (
-                    <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={22}
+                      color="#1E40AF"
+                    />
                   )}
                 </TouchableOpacity>
               ))}
@@ -101,110 +109,5 @@ function SelectField<T extends string>({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: spacing.lg,
-  },
-  label: {
-    ...typography.caption,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: spacing.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  selectButton: {
-    backgroundColor: colors.background,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  selectButtonError: {
-    borderColor: colors.danger,
-    backgroundColor: colors.dangerLight,
-  },
-  selectText: {
-    fontSize: 16,
-    color: colors.text,
-  },
-  placeholderText: {
-    color: colors.textLight,
-  },
-  arrowContainer: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  errorText: {
-    ...typography.caption,
-    color: colors.danger,
-    marginTop: spacing.xs,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
-    maxHeight: '70%',
-    ...shadows.xl,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.xl,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
-  },
-  modalTitle: {
-    ...typography.h3,
-    color: colors.text,
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  optionsList: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  optionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.xs,
-  },
-  optionItemSelected: {
-    backgroundColor: colors.primaryMuted,
-  },
-  optionText: {
-    ...typography.body,
-    color: colors.text,
-  },
-  optionTextSelected: {
-    ...typography.bodyMedium,
-    color: colors.primary,
-  },
-});
 
 export default SelectField;

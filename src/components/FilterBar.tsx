@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Skill, SKILLS, LOCATIONS } from '../types';
-import { colors, shadows, spacing, borderRadius, typography } from '../constants/colors';
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Skill, SKILLS, LOCATIONS } from "../types";
+import { skillColors } from "../constants/colors";
 
 interface FilterBarProps {
   selectedSkill: Skill | null;
@@ -18,42 +18,59 @@ const FilterBar: React.FC<FilterBarProps> = ({
   onLocationChange,
 }) => {
   return (
-    <View style={styles.container}>
-      <View style={styles.filterSection}>
-        <View style={styles.labelRow}>
-          <Ionicons name="construct-outline" size={16} color={colors.textSecondary} />
-          <Text style={styles.label}>Skill</Text>
+    <View className="bg-surface pt-3 pb-3 border-b border-border-light shadow-sm">
+      <View className="mb-2">
+        <View className="flex-row items-center gap-1 px-4 mb-2">
+          <Ionicons name="construct-outline" size={16} color="#475569" />
+          <Text className="text-xs font-medium text-text-secondary uppercase tracking-wide">
+            Skill
+          </Text>
         </View>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
         >
           <TouchableOpacity
-            style={[styles.chip, !selectedSkill && styles.chipActive]}
+            className={`px-4 py-2 rounded-full border-[1.5px] ${
+              !selectedSkill
+                ? "bg-primary border-primary"
+                : "bg-background border-border"
+            }`}
             onPress={() => onSkillChange(null)}
           >
-            <Text style={[styles.chipText, !selectedSkill && styles.chipTextActive]}>
+            <Text
+              className={`text-sm font-semibold ${
+                !selectedSkill ? "text-surface" : "text-text-secondary"
+              }`}
+            >
               All
             </Text>
           </TouchableOpacity>
           {SKILLS.map((skill) => {
             const isSelected = selectedSkill === skill;
-            const skillColor = colors.skillColors[skill];
+            const color = skillColors[skill];
             return (
               <TouchableOpacity
                 key={skill}
-                style={[
-                  styles.chip,
-                  isSelected && { backgroundColor: skillColor, borderColor: skillColor },
-                ]}
+                className={`px-4 py-2 rounded-full border-[1.5px] ${
+                  !isSelected ? "bg-background border-border" : ""
+                }`}
+                style={
+                  isSelected
+                    ? {
+                        backgroundColor: color,
+                        borderColor: color,
+                        borderWidth: 1.5,
+                      }
+                    : undefined
+                }
                 onPress={() => onSkillChange(isSelected ? null : skill)}
               >
                 <Text
-                  style={[
-                    styles.chipText,
-                    isSelected && styles.chipTextActive,
-                  ]}
+                  className={`text-sm font-semibold ${
+                    isSelected ? "text-surface" : "text-text-secondary"
+                  }`}
                 >
                   {skill}
                 </Text>
@@ -63,21 +80,31 @@ const FilterBar: React.FC<FilterBarProps> = ({
         </ScrollView>
       </View>
 
-      <View style={styles.filterSection}>
-        <View style={styles.labelRow}>
-          <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
-          <Text style={styles.label}>Location</Text>
+      <View className="mb-2">
+        <View className="flex-row items-center gap-1 px-4 mb-2">
+          <Ionicons name="location-outline" size={16} color="#475569" />
+          <Text className="text-xs font-medium text-text-secondary uppercase tracking-wide">
+            Location
+          </Text>
         </View>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
         >
           <TouchableOpacity
-            style={[styles.chip, !selectedLocation && styles.chipActive]}
+            className={`px-4 py-2 rounded-full border-[1.5px] ${
+              !selectedLocation
+                ? "bg-primary border-primary"
+                : "bg-background border-border"
+            }`}
             onPress={() => onLocationChange(null)}
           >
-            <Text style={[styles.chipText, !selectedLocation && styles.chipTextActive]}>
+            <Text
+              className={`text-sm font-semibold ${
+                !selectedLocation ? "text-surface" : "text-text-secondary"
+              }`}
+            >
               All
             </Text>
           </TouchableOpacity>
@@ -86,11 +113,17 @@ const FilterBar: React.FC<FilterBarProps> = ({
             return (
               <TouchableOpacity
                 key={location}
-                style={[styles.chip, isSelected && styles.chipActive]}
+                className={`px-4 py-2 rounded-full border-[1.5px] ${
+                  isSelected
+                    ? "bg-primary border-primary"
+                    : "bg-background border-border"
+                }`}
                 onPress={() => onLocationChange(isSelected ? null : location)}
               >
                 <Text
-                  style={[styles.chipText, isSelected && styles.chipTextActive]}
+                  className={`text-sm font-semibold ${
+                    isSelected ? "text-surface" : "text-text-secondary"
+                  }`}
                 >
                   {location}
                 </Text>
@@ -102,56 +135,5 @@ const FilterBar: React.FC<FilterBarProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.surface,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
-    ...shadows.sm,
-  },
-  filterSection: {
-    marginBottom: spacing.sm,
-  },
-  labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  label: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  scrollContent: {
-    paddingHorizontal: spacing.md,
-    gap: spacing.sm,
-  },
-  chip: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.background,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-  },
-  chipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  chipText: {
-    ...typography.small,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  chipTextActive: {
-    color: colors.surface,
-  },
-});
 
 export default FilterBar;

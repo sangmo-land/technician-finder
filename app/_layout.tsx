@@ -1,10 +1,12 @@
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { colors } from '../src/constants/colors';
+import "../global.css";
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { colors } from "../src/constants/colors";
 
 export default function RootLayout() {
   return (
-    <>
+    <SafeAreaProvider>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -13,7 +15,7 @@ export default function RootLayout() {
           },
           headerTintColor: colors.surface,
           headerTitleStyle: {
-            fontWeight: '600',
+            fontWeight: "600",
             fontSize: 18,
           },
           headerShadowVisible: false,
@@ -26,25 +28,25 @@ export default function RootLayout() {
         <Stack.Screen
           name="technician/[id]"
           options={{
-            title: 'Technician Details',
-            presentation: 'card',
+            title: "Technician Details",
+            presentation: "card",
           }}
         />
         <Stack.Screen
           name="add-technician"
           options={{
-            title: 'Add Technician',
-            presentation: 'modal',
+            title: "Add Technician",
+            presentation: "modal",
           }}
         />
         <Stack.Screen
           name="edit-technician/[id]"
           options={{
-            title: 'Edit Technician',
-            presentation: 'modal',
+            title: "Edit Technician",
+            presentation: "modal",
           }}
         />
       </Stack>
-    </>
+    </SafeAreaProvider>
   );
 }

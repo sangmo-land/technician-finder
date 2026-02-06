@@ -1,31 +1,30 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { View, FlatList, RefreshControl, Text } from "react-native";
+import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
+import { Technician, Skill, SortOption } from "../../src/types";
 import {
-  View,
-  FlatList,
-  StyleSheet,
-  RefreshControl,
-  Text,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
-import { Technician, Skill } from '../../src/types';
-import { getAllTechnicians, initializeStorage } from '../../src/services/storage';
-import { colors, shadows, spacing, borderRadius, typography } from '../../src/constants/colors';
+  getAllTechnicians,
+  initializeStorage,
+} from "../../src/services/storage";
 import {
   TechnicianCard,
   FilterBar,
+  SearchBar,
+  SortBar,
   EmptyState,
   LoadingSpinner,
-} from '../../src/components';
+} from "../../src/components";
 
 export default function HomeScreen() {
   const router = useRouter();
   const [technicians, setTechnicians] = useState<Technician[]>([]);
-  const [filteredTechnicians, setFilteredTechnicians] = useState<Technician[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+  const [selectedSort, setSelectedSort] = useState<SortOption | null>(null);
 
   const loadTechnicians = useCallback(async () => {
     try {
@@ -33,7 +32,7 @@ export default function HomeScreen() {
       const data = await getAllTechnicians();
       setTechnicians(data);
     } catch (error) {
-      console.error('Error loading technicians:', error);
+      console.error("Error loading technicians:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -43,22 +42,67 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       loadTechnicians();
-    }, [loadTechnicians])
+    }, [loadTechnicians]),
   );
 
-  useEffect(() => {
+  const filteredTechnicians = useMemo(() => {
     let filtered = technicians;
 
+    // Text search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (t) =>
+          t.name.toLowerCase().includes(q) ||
+          t.skill.toLowerCase().includes(q) ||
+          t.location.toLowerCase().includes(q),
+      );
+    }
+
+    // Skill filter
     if (selectedSkill) {
       filtered = filtered.filter((t) => t.skill === selectedSkill);
     }
 
+    // Location filter
     if (selectedLocation) {
       filtered = filtered.filter((t) => t.location === selectedLocation);
     }
 
-    setFilteredTechnicians(filtered);
-  }, [technicians, selectedSkill, selectedLocation]);
+    // Sort
+    if (selectedSort) {
+      filtered = [...filtered].sort((a, b) => {
+        switch (selectedSort) {
+          case "rating":
+            return (b.rating ?? 0) - (a.rating ?? 0);
+          case "experience":
+            return b.experienceYears - a.experienceYears;
+          case "price_low":
+            return (a.hourlyRate ?? 0) - (b.hourlyRate ?? 0);
+          case "price_high":
+            return (b.hourlyRate ?? 0) - (a.hourlyRate ?? 0);
+          default:
+            return 0;
+        }
+      });
+    }
+
+    return filtered;
+  }, [technicians, searchQuery, selectedSkill, selectedLocation, selectedSort]);
+
+  // Derived stats
+  const uniqueSkills = useMemo(
+    () => new Set(technicians.map((t) => t.skill)).size,
+    [technicians],
+  );
+  const uniqueCities = useMemo(
+    () => new Set(technicians.map((t) => t.location)).size,
+    [technicians],
+  );
+  const availableCount = useMemo(
+    () => technicians.filter((t) => t.availability === "available").length,
+    [technicians],
+  );
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -76,27 +120,44 @@ export default function HomeScreen() {
     />
   );
 
+  const hasActiveFilters =
+    !!selectedSkill || !!selectedLocation || !!searchQuery.trim();
+
   const renderHeader = () => (
-    <View style={styles.headerSection}>
-      <View style={styles.welcomeCard}>
-        <Text style={styles.welcomeTitle}>Welcome to TechFinder</Text>
-        <Text style={styles.welcomeSubtitle}>
-          Find skilled technicians in Cameroon
+    <View className="px-4 pt-4 pb-2">
+      <View className="bg-primary rounded-2xl p-5 shadow-lg">
+        <Text className="text-2xl font-semibold text-surface mb-1">
+          Find Your Expert
         </Text>
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{technicians.length}</Text>
-            <Text style={styles.statLabel}>Technicians</Text>
+        <Text className="text-base text-primary-muted mb-4">
+          Skilled technicians across Cameroon
+        </Text>
+        <View className="flex-row items-center justify-around bg-white/15 rounded-xl py-3">
+          <View className="items-center flex-1">
+            <Text className="text-2xl font-semibold text-surface">
+              {technicians.length}
+            </Text>
+            <Text className="text-xs font-medium text-primary-muted mt-0.5">
+              Technicians
+            </Text>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>5</Text>
-            <Text style={styles.statLabel}>Skills</Text>
+          <View className="w-px h-8 bg-white/20" />
+          <View className="items-center flex-1">
+            <Text className="text-2xl font-semibold text-surface">
+              {availableCount}
+            </Text>
+            <Text className="text-xs font-medium text-primary-muted mt-0.5">
+              Available
+            </Text>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>12</Text>
-            <Text style={styles.statLabel}>Cities</Text>
+          <View className="w-px h-8 bg-white/20" />
+          <View className="items-center flex-1">
+            <Text className="text-2xl font-semibold text-surface">
+              {uniqueCities}
+            </Text>
+            <Text className="text-xs font-medium text-primary-muted mt-0.5">
+              Cities
+            </Text>
           </View>
         </View>
       </View>
@@ -108,22 +169,37 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-background">
+      {/* Search bar */}
+      <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
+
+      {/* Filters + Sort */}
       <FilterBar
         selectedSkill={selectedSkill}
         selectedLocation={selectedLocation}
         onSkillChange={setSelectedSkill}
         onLocationChange={setSelectedLocation}
       />
+      <SortBar selectedSort={selectedSort} onSortChange={setSelectedSort} />
+
+      {/* Results count */}
+      {hasActiveFilters && (
+        <View className="px-4 pb-2">
+          <Text className="text-sm text-text-secondary">
+            {filteredTechnicians.length} result
+            {filteredTechnicians.length !== 1 ? "s" : ""} found
+          </Text>
+        </View>
+      )}
 
       {filteredTechnicians.length === 0 ? (
         <EmptyState
           icon="👷"
           title="No technicians found"
           message={
-            selectedSkill || selectedLocation
-              ? 'Try adjusting your filters to see more results.'
-              : 'No technicians available. Check back later!'
+            hasActiveFilters
+              ? "Try adjusting your search or filters to see more results."
+              : "No technicians available. Check back later!"
           }
         />
       ) : (
@@ -132,14 +208,14 @@ export default function HomeScreen() {
           renderItem={renderTechnician}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={renderHeader}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={{ paddingBottom: 32 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              colors={[colors.primary]}
-              tintColor={colors.primary}
+              colors={["#1E40AF"]}
+              tintColor="#1E40AF"
             />
           }
         />
@@ -147,60 +223,3 @@ export default function HomeScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  headerSection: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.sm,
-  },
-  welcomeCard: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.xl,
-    padding: spacing.xl,
-    ...shadows.lg,
-  },
-  welcomeTitle: {
-    ...typography.h2,
-    color: colors.surface,
-    marginBottom: spacing.xs,
-  },
-  welcomeSubtitle: {
-    ...typography.body,
-    color: colors.primaryMuted,
-    marginBottom: spacing.lg,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-  },
-  statItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statNumber: {
-    ...typography.h2,
-    color: colors.surface,
-  },
-  statLabel: {
-    ...typography.caption,
-    color: colors.primaryMuted,
-    marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  listContent: {
-    paddingBottom: spacing['3xl'],
-  },
-});

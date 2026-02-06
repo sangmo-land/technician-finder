@@ -1,19 +1,12 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  ViewStyle,
-} from 'react-native';
-import { colors, spacing, borderRadius, typography } from '../constants/colors';
+import { View, Text, TextInput, ViewStyle } from "react-native";
 
 interface InputFieldProps {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
-  keyboardType?: 'default' | 'numeric' | 'phone-pad' | 'email-address';
+  keyboardType?: "default" | "numeric" | "phone-pad" | "email-address";
   error?: string;
   multiline?: boolean;
   style?: ViewStyle;
@@ -24,68 +17,33 @@ const InputField: React.FC<InputFieldProps> = ({
   value,
   onChangeText,
   placeholder,
-  keyboardType = 'default',
+  keyboardType = "default",
   error,
   multiline = false,
   style,
 }) => {
   return (
-    <View style={[styles.container, style]}>
-      <Text style={styles.label}>{label}</Text>
+    <View className="mb-4" style={style}>
+      <Text className="text-xs font-semibold text-text mb-2 uppercase tracking-wide">
+        {label}
+      </Text>
       <TextInput
-        style={[
-          styles.input,
-          multiline && styles.multilineInput,
-          error && styles.inputError,
-        ]}
+        className={`bg-background border-[1.5px] rounded-xl px-4 py-3 text-base text-text ${
+          error ? "border-danger bg-danger-light" : "border-border"
+        } ${multiline ? "min-h-[100px] pt-3" : ""}`}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={colors.textLight}
+        placeholderTextColor="#CBD5E1"
         keyboardType={keyboardType}
         multiline={multiline}
-        textAlignVertical={multiline ? 'top' : 'center'}
+        textAlignVertical={multiline ? "top" : "center"}
       />
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error && (
+        <Text className="text-xs font-medium text-danger mt-1">{error}</Text>
+      )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: spacing.lg,
-  },
-  label: {
-    ...typography.caption,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: spacing.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  input: {
-    backgroundColor: colors.background,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    fontSize: 16,
-    color: colors.text,
-  },
-  multilineInput: {
-    minHeight: 100,
-    paddingTop: spacing.md,
-  },
-  inputError: {
-    borderColor: colors.danger,
-    backgroundColor: colors.dangerLight,
-  },
-  errorText: {
-    ...typography.caption,
-    color: colors.danger,
-    marginTop: spacing.xs,
-  },
-});
 
 export default InputField;

@@ -170,7 +170,9 @@ export default function EditTechnicianScreen() {
           className="bg-primary px-8 py-3 rounded-xl"
           onPress={() => router.back()}
         >
-          <Text className="text-base font-medium text-surface">{t("common.goBack")}</Text>
+          <Text className="text-base font-medium text-surface">
+            {t("common.goBack")}
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -278,7 +280,9 @@ export default function EditTechnicianScreen() {
             value={availability ? t(`availability.${availability}`) : null}
             options={AVAILABILITY_OPTIONS.map((a) => t(`availability.${a}`))}
             onSelect={(val) => {
-              const match = AVAILABILITY_OPTIONS.find((a) => t(`availability.${a}`) === val);
+              const match = AVAILABILITY_OPTIONS.find(
+                (a) => t(`availability.${a}`) === val,
+              );
               setAvailability(match || null);
             }}
             placeholder={t("form.selectAvailability")}

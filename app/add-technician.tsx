@@ -219,7 +219,9 @@ export default function AddTechnicianScreen() {
             value={availability ? t(`availability.${availability}`) : null}
             options={AVAILABILITY_OPTIONS.map((a) => t(`availability.${a}`))}
             onSelect={(val) => {
-              const match = AVAILABILITY_OPTIONS.find((a) => t(`availability.${a}`) === val);
+              const match = AVAILABILITY_OPTIONS.find(
+                (a) => t(`availability.${a}`) === val,
+              );
               setAvailability(match || null);
             }}
             placeholder={t("form.selectAvailability")}

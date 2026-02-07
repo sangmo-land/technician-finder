@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, TextInput, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 interface SearchBarProps {
   value: string;
@@ -12,10 +13,12 @@ interface SearchBarProps {
 const SearchBar: React.FC<SearchBarProps> = ({
   value,
   onChangeText,
-  placeholder = "Search by name, skill, or city...",
+  placeholder,
   variant = "default",
 }) => {
+  const { t } = useTranslation();
   const isHero = variant === "hero";
+  const displayPlaceholder = placeholder || t("search.placeholder");
 
   return (
     <View className={isHero ? "" : "mx-4 mt-3 mb-1"}>
@@ -45,7 +48,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         </View>
         <TextInput
           className={`flex-1 ml-3 text-base ${isHero ? "text-white" : "text-text"}`}
-          placeholder={placeholder}
+          placeholder={displayPlaceholder}
           placeholderTextColor={isHero ? "rgba(255,255,255,0.55)" : "#94A3B8"}
           value={value}
           onChangeText={onChangeText}

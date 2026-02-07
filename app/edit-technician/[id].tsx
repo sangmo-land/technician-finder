@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import {
   Skill,
   Availability,
@@ -39,6 +40,7 @@ interface FormErrors {
 export default function EditTechnicianScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t } = useTranslation();
 
   const [technician, setTechnician] = useState<Technician | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
@@ -84,41 +86,41 @@ export default function EditTechnicianScreen() {
     const newErrors: FormErrors = {};
 
     if (!name.trim()) {
-      newErrors.name = "Name is required";
+      newErrors.name = t("validation.nameRequired");
     } else if (name.trim().length < 2) {
-      newErrors.name = "Name must be at least 2 characters";
+      newErrors.name = t("validation.nameMinLength");
     }
 
     if (!skill) {
-      newErrors.skill = "Please select a skill";
+      newErrors.skill = t("validation.selectSkill");
     }
 
     if (!phone.trim()) {
-      newErrors.phone = "Phone number is required";
+      newErrors.phone = t("validation.phoneRequired");
     } else if (phone.trim().length < 8) {
-      newErrors.phone = "Please enter a valid phone number";
+      newErrors.phone = t("validation.phoneInvalid");
     }
 
     if (!location) {
-      newErrors.location = "Please select a location";
+      newErrors.location = t("validation.selectLocation");
     }
 
     const years = parseInt(experienceYears, 10);
     if (!experienceYears.trim()) {
-      newErrors.experienceYears = "Experience is required";
+      newErrors.experienceYears = t("validation.experienceRequired");
     } else if (isNaN(years) || years < 0 || years > 50) {
-      newErrors.experienceYears = "Enter a valid number (0-50)";
+      newErrors.experienceYears = t("validation.experienceInvalid");
     }
 
     const rate = parseInt(hourlyRate, 10);
     if (!hourlyRate.trim()) {
-      newErrors.hourlyRate = "Hourly rate is required";
+      newErrors.hourlyRate = t("validation.rateRequired");
     } else if (isNaN(rate) || rate < 500 || rate > 100000) {
-      newErrors.hourlyRate = "Enter a valid rate (500-100,000 XAF)";
+      newErrors.hourlyRate = t("validation.rateInvalid");
     }
 
     if (!availability) {
-      newErrors.availability = "Please select availability";
+      newErrors.availability = t("validation.selectAvailability");
     }
 
     setErrors(newErrors);
@@ -147,7 +149,7 @@ export default function EditTechnicianScreen() {
       await updateTechnician(technician.id, formData);
       router.back();
     } catch (error) {
-      Alert.alert("Error", "Failed to update technician. Please try again.");
+      Alert.alert(t("common.error"), t("form.updateFailed"));
     } finally {
       setLoading(false);
     }
@@ -162,13 +164,13 @@ export default function EditTechnicianScreen() {
       <View className="flex-1 bg-background items-center justify-center p-8">
         <Ionicons name="alert-circle" size={64} color="#EF4444" />
         <Text className="text-xl font-semibold text-text mt-4 mb-5">
-          Technician Not Found
+          {t("form.technicianNotFound")}
         </Text>
         <TouchableOpacity
           className="bg-primary px-8 py-3 rounded-xl"
           onPress={() => router.back()}
         >
-          <Text className="text-base font-medium text-surface">Go Back</Text>
+          <Text className="text-base font-medium text-surface">{t("common.goBack")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -196,50 +198,53 @@ export default function EditTechnicianScreen() {
             <Ionicons name="create" size={32} color={techSkillColor} />
           </View>
           <Text className="text-2xl font-semibold text-text mb-1">
-            Edit Technician
+            {t("screens.editTechnician")}
           </Text>
           <Text className="text-base text-text-secondary">
-            Update {technician.name.split(" ")[0]}'s information
+            {t("form.updateInfo", { name: technician.name.split(" ")[0] })}
           </Text>
         </View>
 
         {/* Basic Info Card */}
         <View className="bg-surface rounded-2xl p-5 shadow-md mb-3">
           <Text className="text-xs font-medium text-text-muted uppercase mb-3 tracking-widest">
-            Basic Information
+            {t("form.basicInfo")}
           </Text>
           <InputField
-            label="Full Name"
+            label={t("form.fullName")}
             value={name}
             onChangeText={setName}
-            placeholder="e.g., Jean-Pierre Nkomo"
+            placeholder={t("form.fullNamePlaceholder")}
             error={errors.name}
           />
 
           <SelectField
-            label="Skill / Trade"
-            value={skill}
-            options={SKILLS}
-            onSelect={setSkill}
-            placeholder="Select a skill"
+            label={t("form.skillTrade")}
+            value={skill ? t(`skills.${skill}`) : null}
+            options={SKILLS.map((s) => t(`skills.${s}`))}
+            onSelect={(val) => {
+              const match = SKILLS.find((s) => t(`skills.${s}`) === val);
+              setSkill(match || null);
+            }}
+            placeholder={t("form.selectSkill")}
             error={errors.skill}
           />
 
           <InputField
-            label="Phone Number"
+            label={t("form.phoneNumber")}
             value={phone}
             onChangeText={setPhone}
-            placeholder="e.g., +237 6 70 12 34 56"
+            placeholder={t("form.phonePlaceholder")}
             keyboardType="phone-pad"
             error={errors.phone}
           />
 
           <SelectField
-            label="Location"
+            label={t("form.locationLabel")}
             value={location}
             options={LOCATIONS}
             onSelect={setLocation}
-            placeholder="Select a city"
+            placeholder={t("form.selectCity")}
             error={errors.location}
           />
         </View>
@@ -247,49 +252,44 @@ export default function EditTechnicianScreen() {
         {/* Professional Details Card */}
         <View className="bg-surface rounded-2xl p-5 shadow-md mb-3">
           <Text className="text-xs font-medium text-text-muted uppercase mb-3 tracking-widest">
-            Professional Details
+            {t("form.professionalDetails")}
           </Text>
 
           <InputField
-            label="Years of Experience"
+            label={t("form.yearsOfExperience")}
             value={experienceYears}
             onChangeText={setExperienceYears}
-            placeholder="e.g., 5"
+            placeholder={t("form.yearsPlaceholder")}
             keyboardType="numeric"
             error={errors.experienceYears}
           />
 
           <InputField
-            label="Hourly Rate (XAF)"
+            label={t("form.hourlyRate")}
             value={hourlyRate}
             onChangeText={setHourlyRate}
-            placeholder="e.g., 5000"
+            placeholder={t("form.ratePlaceholder")}
             keyboardType="numeric"
             error={errors.hourlyRate}
           />
 
           <SelectField
-            label="Availability"
-            value={
-              availability
-                ? availability.charAt(0).toUpperCase() + availability.slice(1)
-                : null
-            }
-            options={AVAILABILITY_OPTIONS.map(
-              (a) => a.charAt(0).toUpperCase() + a.slice(1),
-            )}
-            onSelect={(val) =>
-              setAvailability(val ? (val.toLowerCase() as Availability) : null)
-            }
-            placeholder="Select availability"
+            label={t("form.availabilityLabel")}
+            value={availability ? t(`availability.${availability}`) : null}
+            options={AVAILABILITY_OPTIONS.map((a) => t(`availability.${a}`))}
+            onSelect={(val) => {
+              const match = AVAILABILITY_OPTIONS.find((a) => t(`availability.${a}`) === val);
+              setAvailability(match || null);
+            }}
+            placeholder={t("form.selectAvailability")}
             error={errors.availability}
           />
 
           <InputField
-            label="Bio / Description (Optional)"
+            label={t("form.bioLabel")}
             value={bio}
             onChangeText={setBio}
-            placeholder="Describe specialties, certifications, approach..."
+            placeholder={t("form.bioPlaceholder")}
             multiline
           />
         </View>
@@ -306,7 +306,7 @@ export default function EditTechnicianScreen() {
           >
             <Ionicons name="checkmark-circle" size={22} color="#FFFFFF" />
             <Text className="text-base font-medium text-surface">
-              {loading ? "Saving..." : "Save Changes"}
+              {loading ? t("form.saving") : t("form.saveChanges")}
             </Text>
           </TouchableOpacity>
 
@@ -316,7 +316,7 @@ export default function EditTechnicianScreen() {
             activeOpacity={0.7}
           >
             <Text className="text-base font-medium text-text-secondary">
-              Cancel
+              {t("common.cancel")}
             </Text>
           </TouchableOpacity>
         </View>

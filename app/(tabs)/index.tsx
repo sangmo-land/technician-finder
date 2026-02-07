@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, FlatList, RefreshControl, Text } from "react-native";
+import { View, FlatList, RefreshControl, Text, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { Technician, Skill, SortOption } from "../../src/types";
 import {
   getAllTechnicians,
@@ -17,17 +18,19 @@ import {
   EmptyState,
   LoadingSpinner,
 } from "../../src/components";
+import { changeLanguage, supportedLanguages } from "../../src/i18n";
 
-function getGreeting(): { text: string; icon: string } {
+function getGreetingKey(): { key: string; icon: string } {
   const hour = new Date().getHours();
-  if (hour < 12) return { text: "Good Morning", icon: "sunny" };
-  if (hour < 17) return { text: "Good Afternoon", icon: "partly-sunny" };
-  return { text: "Good Evening", icon: "moon" };
+  if (hour < 12) return { key: "home.greetingMorning", icon: "sunny" };
+  if (hour < 17) return { key: "home.greetingAfternoon", icon: "partly-sunny" };
+  return { key: "home.greetingEvening", icon: "moon" };
 }
 
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t, i18n } = useTranslation();
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -117,7 +120,7 @@ export default function HomeScreen() {
     [technicians],
   );
 
-  const greeting = getGreeting();
+  const greeting = getGreetingKey();
   const hasActiveFilters =
     !!selectedSkill || !!selectedLocation || !!searchQuery.trim();
 
@@ -151,7 +154,7 @@ export default function HomeScreen() {
           <View className="flex-row items-center gap-2 px-4 mb-2">
             <Ionicons name="trophy" size={16} color="#F59E0B" />
             <Text className="text-sm font-bold text-text uppercase tracking-wider">
-              Featured Expert
+              {t("home.featuredExpert")}
             </Text>
           </View>
           <TechnicianCard
@@ -167,7 +170,7 @@ export default function HomeScreen() {
         <View className="flex-row items-center gap-2">
           <Ionicons name="people" size={16} color="#1E40AF" />
           <Text className="text-sm font-bold text-text uppercase tracking-wider">
-            {hasActiveFilters ? "Results" : "All Technicians"}
+            {hasActiveFilters ? t("home.results") : t("home.allTechnicians")}
           </Text>
         </View>
         <View className="bg-primary-muted px-2.5 py-1 rounded-lg">
@@ -180,9 +183,9 @@ export default function HomeScreen() {
       {/* Contextual filter description */}
       {hasActiveFilters && (
         <Text className="text-xs text-text-muted px-4 mb-1">
-          {selectedSkill ? `${selectedSkill}s` : "Technicians"}
-          {selectedLocation ? ` in ${selectedLocation}` : ""}
-          {searchQuery.trim() ? ` matching "${searchQuery.trim()}"` : ""}
+          {selectedSkill ? t(`skills.${selectedSkill}`) + "s" : t("home.technicians")}
+          {selectedLocation ? ` ${t("filters.city").toLowerCase()}: ${selectedLocation}` : ""}
+          {searchQuery.trim() ? ` "${searchQuery.trim()}"` : ""}
         </Text>
       )}
     </View>
@@ -202,17 +205,33 @@ export default function HomeScreen() {
         className="px-4 pb-5"
         style={{ paddingTop: insets.top + 12 }}
       >
-        {/* Greeting */}
-        <View className="flex-row items-center gap-2 mb-1">
-          <Ionicons name={greeting.icon as any} size={18} color="#FDE68A" />
-          <Text className="text-sm font-medium" style={{ color: "#FDE68A" }}>
-            {greeting.text}
-          </Text>
+        {/* Top row: Greeting + Language Switcher */}
+        <View className="flex-row items-center justify-between mb-1">
+          <View className="flex-row items-center gap-2">
+            <Ionicons name={greeting.icon as any} size={18} color="#FDE68A" />
+            <Text className="text-sm font-medium" style={{ color: "#FDE68A" }}>
+              {t(greeting.key)}
+            </Text>
+          </View>
+          <TouchableOpacity
+            className="flex-row items-center px-3 py-1.5 rounded-full"
+            style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+            onPress={() => {
+              const next = i18n.language === "fr" ? "en" : "fr";
+              changeLanguage(next);
+            }}
+            activeOpacity={0.7}
+          >
+            <Text className="text-sm" style={{ color: "rgba(255,255,255,0.9)" }}>
+              {supportedLanguages.find((l) => l.code === i18n.language)?.flag}{" "}
+              {i18n.language.toUpperCase()}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Title */}
         <Text className="text-2xl font-bold text-white mb-1">
-          Find the perfect technician
+          {t("home.heroTitle")}
         </Text>
 
         {/* Inline Stats */}
@@ -223,7 +242,7 @@ export default function HomeScreen() {
               className="text-xs font-semibold"
               style={{ color: "rgba(255,255,255,0.75)" }}
             >
-              {technicians.length} Experts
+              {technicians.length} {t("home.experts")}
             </Text>
           </View>
           <Text style={{ color: "rgba(255,255,255,0.35)" }}>·</Text>
@@ -233,7 +252,7 @@ export default function HomeScreen() {
               className="text-xs font-semibold"
               style={{ color: "rgba(255,255,255,0.75)" }}
             >
-              {availableCount} Available
+              {availableCount} {t("home.available")}
             </Text>
           </View>
           <Text style={{ color: "rgba(255,255,255,0.35)" }}>·</Text>
@@ -243,7 +262,7 @@ export default function HomeScreen() {
               className="text-xs font-semibold"
               style={{ color: "rgba(255,255,255,0.75)" }}
             >
-              {uniqueCities} Cities
+              {uniqueCities} {t("home.cities")}
             </Text>
           </View>
         </View>
@@ -270,11 +289,11 @@ export default function HomeScreen() {
       {filteredTechnicians.length === 0 ? (
         <EmptyState
           icon="👷"
-          title="No technicians found"
+          title={t("home.noTechniciansTitle")}
           message={
             hasActiveFilters
-              ? "Try adjusting your search or filters to see more results."
-              : "No technicians available. Check back later!"
+              ? t("home.noTechniciansFiltered")
+              : t("home.noTechniciansEmpty")
           }
         />
       ) : (

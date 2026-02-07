@@ -3,12 +3,14 @@ import { View, Text, FlatList, RefreshControl, TouchableOpacity } from 'react-na
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Technician } from '../../src/types';
 import { getFavoriteTechnicians } from '../../src/services/storage';
 import { TechnicianCard, EmptyState, LoadingSpinner } from '../../src/components';
 
 export default function FavoritesScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [favorites, setFavorites] = useState<Technician[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -49,10 +51,12 @@ export default function FavoritesScreen() {
         <View className="flex-row justify-between items-center">
           <View>
             <Text className="text-xl font-semibold text-text">
-              Your Favorites
+              {t("favorites.title")}
             </Text>
             <Text className="text-sm text-text-secondary mt-1">
-              {favorites.length} {favorites.length === 1 ? 'technician' : 'technicians'} saved
+              {favorites.length === 1
+                ? t("favorites.countSingular", { count: favorites.length })
+                : t("favorites.countPlural", { count: favorites.length })}
             </Text>
           </View>
           <View className="w-14 h-14 rounded-xl bg-danger-light items-center justify-center">
@@ -74,8 +78,8 @@ export default function FavoritesScreen() {
           {renderHeader()}
           <EmptyState
             icon="❤️"
-            title="No favorites yet"
-            message="Tap the heart icon on a technician's profile to save them here for quick access."
+            title={t("favorites.emptyTitle")}
+            message={t("favorites.emptyMessage")}
           />
         </>
       ) : (

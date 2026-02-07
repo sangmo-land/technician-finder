@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { Technician } from "../../src/types";
 import {
   getTechnicianById,
@@ -21,25 +22,26 @@ import { LoadingSpinner, EmptyState } from "../../src/components";
 
 const availabilityConfig: Record<
   string,
-  { label: string; color: string; bg: string; icon: string }
+  { labelKey: string; color: string; bg: string; icon: string }
 > = {
   available: {
-    label: "Available Now",
+    labelKey: "availability.availableNow",
     color: "#059669",
     bg: "#D1FAE5",
     icon: "checkmark-circle",
   },
   busy: {
-    label: "Currently Busy",
+    labelKey: "availability.currentlyBusy",
     color: "#D97706",
     bg: "#FEF3C7",
     icon: "time",
   },
-  offline: { label: "Offline", color: "#94A3B8", bg: "#F1F5F9", icon: "moon" },
+  offline: { labelKey: "availability.offline", color: "#94A3B8", bg: "#F1F5F9", icon: "moon" },
 };
 
 export default function TechnicianDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t } = useTranslation();
   const [technician, setTechnician] = useState<Technician | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFav, setIsFav] = useState(false);
@@ -83,13 +85,13 @@ export default function TechnicianDetailsScreen() {
           Linking.openURL(url);
         } else {
           Alert.alert(
-            "Cannot Make Call",
-            "Phone calling is not supported on this device.",
-            [{ text: "OK" }],
+            t("detail.cannotCallTitle"),
+            t("detail.cannotCallMessage"),
+            [{ text: t("common.ok") }],
           );
         }
       })
-      .catch(() => Alert.alert("Error", "Failed to open phone app."));
+      .catch(() => Alert.alert(t("common.error"), t("detail.failedCall")));
   };
 
   if (loading) return <LoadingSpinner />;
@@ -98,8 +100,8 @@ export default function TechnicianDetailsScreen() {
     return (
       <EmptyState
         icon="❌"
-        title="Technician not found"
-        message="The technician you're looking for doesn't exist or has been removed."
+        title={t("detail.notFoundTitle")}
+        message={t("detail.notFoundMessage")}
       />
     );
   }
@@ -167,7 +169,7 @@ export default function TechnicianDetailsScreen() {
                 style={{ backgroundColor: color }}
               />
               <Text className="text-sm font-semibold" style={{ color }}>
-                {technician.skill}
+                {t(`skills.${technician.skill}`)}
               </Text>
             </View>
             <View
@@ -178,7 +180,7 @@ export default function TechnicianDetailsScreen() {
                 className="text-sm font-medium"
                 style={{ color: avail.color }}
               >
-                {avail.label}
+                {t(avail.labelKey)}
               </Text>
             </View>
           </View>
@@ -200,10 +202,10 @@ export default function TechnicianDetailsScreen() {
             <Text className="text-base font-semibold text-text ml-1">
               {(technician.rating ?? 0) > 0
                 ? technician.rating.toFixed(1)
-                : "New"}
+                : t("common.new")}
             </Text>
             <Text className="text-sm text-text-muted">
-              ({technician.reviewCount ?? 0} reviews)
+              ({technician.reviewCount ?? 0} {t("common.reviews")})
             </Text>
           </View>
         </View>
@@ -215,7 +217,7 @@ export default function TechnicianDetailsScreen() {
               {technician.experienceYears}
             </Text>
             <Text className="text-xs font-medium text-text-muted mt-0.5">
-              Years Exp.
+              {t("detail.yearsExp")}
             </Text>
           </View>
           <View className="flex-1 bg-surface rounded-xl py-4 items-center shadow-sm">
@@ -223,7 +225,7 @@ export default function TechnicianDetailsScreen() {
               {technician.jobsCompleted ?? 0}
             </Text>
             <Text className="text-xs font-medium text-text-muted mt-0.5">
-              Jobs Done
+              {t("detail.jobsDone")}
             </Text>
           </View>
           <View className="flex-1 bg-surface rounded-xl py-4 items-center shadow-sm">
@@ -231,7 +233,7 @@ export default function TechnicianDetailsScreen() {
               {(technician.hourlyRate ?? 0).toLocaleString()}
             </Text>
             <Text className="text-xs font-medium text-text-muted mt-0.5">
-              XAF/hr
+              {t("common.xafPerHour")}
             </Text>
           </View>
         </View>
@@ -240,7 +242,7 @@ export default function TechnicianDetailsScreen() {
         {technician.bio ? (
           <View className="bg-surface mx-4 mt-3 rounded-2xl p-5 shadow-sm">
             <Text className="text-xs font-medium text-text-muted uppercase mb-3 tracking-widest">
-              About
+              {t("detail.about")}
             </Text>
             <Text className="text-base text-text-secondary leading-6">
               {technician.bio}
@@ -251,7 +253,7 @@ export default function TechnicianDetailsScreen() {
         {/* Contact Info */}
         <View className="bg-surface mx-4 mt-3 rounded-2xl p-5 shadow-sm">
           <Text className="text-xs font-medium text-text-muted uppercase mb-4 tracking-widest">
-            Contact Information
+            {t("detail.contactInfo")}
           </Text>
 
           <View className="flex-row items-center py-2">
@@ -260,10 +262,10 @@ export default function TechnicianDetailsScreen() {
             </View>
             <View className="flex-1">
               <Text className="text-xs font-medium text-text-muted mb-0.5">
-                Location
+                {t("detail.location")}
               </Text>
               <Text className="text-base font-medium text-text">
-                {technician.location}, Cameroon
+                {technician.location}, {t("common.cameroon")}
               </Text>
             </View>
           </View>
@@ -276,7 +278,7 @@ export default function TechnicianDetailsScreen() {
             </View>
             <View className="flex-1">
               <Text className="text-xs font-medium text-text-muted mb-0.5">
-                Phone Number
+                {t("detail.phoneNumber")}
               </Text>
               <Text className="text-base font-medium text-text">
                 {technician.phone}
@@ -294,7 +296,7 @@ export default function TechnicianDetailsScreen() {
           >
             <Ionicons name="call" size={22} color="#FFFFFF" />
             <Text className="text-lg font-semibold text-surface">
-              Call {technician.name.split(" ")[0]}
+              {t("detail.call", { name: technician.name.split(" ")[0] })}
             </Text>
           </TouchableOpacity>
 
@@ -315,7 +317,7 @@ export default function TechnicianDetailsScreen() {
             <Text
               className={`text-lg font-semibold ${isFav ? "text-danger" : "text-text-secondary"}`}
             >
-              {isFav ? "Remove from Favorites" : "Add to Favorites"}
+              {isFav ? t("detail.removeFromFavorites") : t("detail.addToFavorites")}
             </Text>
           </TouchableOpacity>
         </View>

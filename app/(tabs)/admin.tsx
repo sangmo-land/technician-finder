@@ -10,6 +10,7 @@ import {
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { Technician } from "../../src/types";
 import {
   getAllTechnicians,
@@ -21,6 +22,7 @@ import { EmptyState, LoadingSpinner } from "../../src/components";
 
 export default function AdminScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -50,19 +52,19 @@ export default function AdminScreen() {
 
   const handleDelete = (technician: Technician) => {
     Alert.alert(
-      "Delete Technician",
-      `Are you sure you want to delete ${technician.name}?`,
+      t("admin.deleteTitle"),
+      t("admin.deleteMessage", { name: technician.name }),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("common.delete"),
           style: "destructive",
           onPress: async () => {
             try {
               await deleteTechnician(technician.id);
               loadTechnicians();
             } catch (error) {
-              Alert.alert("Error", "Failed to delete technician.");
+              Alert.alert(t("common.error"), t("admin.deleteFailed"));
             }
           },
         },
@@ -72,19 +74,19 @@ export default function AdminScreen() {
 
   const handleReset = () => {
     Alert.alert(
-      "Reset Data",
-      "This will restore all technicians to the original sample data. Continue?",
+      t("admin.resetTitle"),
+      t("admin.resetMessage"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Reset",
+          text: t("common.reset"),
           style: "destructive",
           onPress: async () => {
             try {
               await resetToSeedData();
               loadTechnicians();
             } catch (error) {
-              Alert.alert("Error", "Failed to reset data.");
+              Alert.alert(t("common.error"), t("admin.resetFailed"));
             }
           },
         },
@@ -116,7 +118,7 @@ export default function AdminScreen() {
               style={{ backgroundColor: `${color}15` }}
             >
               <Text className="text-xs font-semibold" style={{ color }}>
-                {item.skill}
+                {t(`skills.${item.skill}`)}
               </Text>
             </View>
             <View className="flex-row items-center gap-1">
@@ -128,11 +130,11 @@ export default function AdminScreen() {
             <View className="flex-row items-center gap-1">
               <Ionicons name="star" size={12} color="#F59E0B" />
               <Text className="text-sm text-text-secondary">
-                {(item.rating ?? 0) > 0 ? item.rating.toFixed(1) : "New"}
+                {(item.rating ?? 0) > 0 ? item.rating.toFixed(1) : t("common.new")}
               </Text>
             </View>
             <Text className="text-sm font-medium text-primary">
-              {(item.hourlyRate ?? 0).toLocaleString()} XAF/hr
+              {(item.hourlyRate ?? 0).toLocaleString()} {t("common.xafPerHour")}
             </Text>
           </View>
         </View>
@@ -161,10 +163,10 @@ export default function AdminScreen() {
         <View className="flex-row justify-between items-center">
           <View>
             <Text className="text-xl font-semibold text-text">
-              Technician Management
+              {t("admin.title")}
             </Text>
             <Text className="text-sm text-text-secondary mt-1">
-              {technicians.length} technicians registered
+              {t("admin.registered", { count: technicians.length })}
             </Text>
           </View>
           <View className="w-14 h-14 rounded-xl bg-primary-muted items-center justify-center">
@@ -180,7 +182,7 @@ export default function AdminScreen() {
         >
           <Ionicons name="add-circle" size={22} color="#FFFFFF" />
           <Text className="text-base font-medium text-surface">
-            Add Technician
+            {t("admin.addTechnician")}
           </Text>
         </TouchableOpacity>
 
@@ -205,8 +207,8 @@ export default function AdminScreen() {
           {renderHeader()}
           <EmptyState
             icon="📋"
-            title="No technicians"
-            message="Add your first technician using the button above."
+            title={t("admin.noTechniciansTitle")}
+            message={t("admin.noTechniciansMessage")}
           />
         </>
       ) : (

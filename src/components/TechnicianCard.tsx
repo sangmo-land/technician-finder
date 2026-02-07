@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { Technician } from "../types";
 import { skillColors } from "../constants/colors";
 
@@ -12,11 +13,11 @@ interface TechnicianCardProps {
 
 const availabilityConfig: Record<
   string,
-  { label: string; color: string; bg: string }
+  { labelKey: string; color: string; bg: string }
 > = {
-  available: { label: "Available", color: "#059669", bg: "#D1FAE5" },
-  busy: { label: "Busy", color: "#D97706", bg: "#FEF3C7" },
-  offline: { label: "Offline", color: "#94A3B8", bg: "#F1F5F9" },
+  available: { labelKey: "availability.available", color: "#059669", bg: "#D1FAE5" },
+  busy: { labelKey: "availability.busy", color: "#D97706", bg: "#FEF3C7" },
+  offline: { labelKey: "availability.offline", color: "#94A3B8", bg: "#F1F5F9" },
 };
 
 const TechnicianCard: React.FC<TechnicianCardProps> = ({
@@ -24,6 +25,7 @@ const TechnicianCard: React.FC<TechnicianCardProps> = ({
   onPress,
   variant = "default",
 }) => {
+  const { t } = useTranslation();
   const skillColor = skillColors[technician.skill];
   const avail =
     availabilityConfig[technician.availability] || availabilityConfig.offline;
@@ -53,7 +55,7 @@ const TechnicianCard: React.FC<TechnicianCardProps> = ({
             <View className="flex-row items-center gap-1.5 px-4 pt-3 pb-1">
               <Ionicons name="trophy" size={12} color="#F59E0B" />
               <Text className="text-[11px] font-bold text-warning uppercase tracking-widest">
-                Top Rated
+                {t("card.topRated")}
               </Text>
             </View>
           )}
@@ -114,14 +116,14 @@ const TechnicianCard: React.FC<TechnicianCardProps> = ({
                   className="text-xs font-semibold"
                   style={{ color: skillColor }}
                 >
-                  {technician.skill}
+                  {t(`skills.${technician.skill}`)}
                 </Text>
                 <View className="w-1 h-1 rounded-full bg-text-light" />
                 <Text
                   className="text-xs font-medium"
                   style={{ color: avail.color }}
                 >
-                  {avail.label}
+                  {t(avail.labelKey)}
                 </Text>
               </View>
 
@@ -147,7 +149,7 @@ const TechnicianCard: React.FC<TechnicianCardProps> = ({
             <View className="flex-row items-center flex-1 gap-1">
               <Ionicons name="star" size={13} color="#F59E0B" />
               <Text className="text-xs font-bold text-text">
-                {rating > 0 ? rating.toFixed(1) : "New"}
+                {rating > 0 ? rating.toFixed(1) : t("common.new")}
               </Text>
               {reviewCount > 0 && (
                 <Text className="text-[10px] text-text-muted">
@@ -172,7 +174,7 @@ const TechnicianCard: React.FC<TechnicianCardProps> = ({
               <Text className="text-xs font-bold text-primary">
                 {hourlyRate.toLocaleString()}
               </Text>
-              <Text className="text-[10px] text-text-muted">XAF/hr</Text>
+              <Text className="text-[10px] text-text-muted">{t("common.xafPerHour")}</Text>
             </View>
           </View>
         </View>

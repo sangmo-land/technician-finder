@@ -9,6 +9,7 @@ import {
   UIManager,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { Skill, SKILLS, LOCATIONS, SortOption, SORT_OPTIONS } from "../types";
 import { skillColors } from "../constants/colors";
 
@@ -28,12 +29,12 @@ interface FilterBarProps {
   onSortChange: (sort: SortOption | null) => void;
 }
 
-const skillIcons: Record<Skill, { icon: string; label: string }> = {
-  Plumber: { icon: "water", label: "Plumber" },
-  Electrician: { icon: "flash", label: "Electric" },
-  Carpenter: { icon: "hammer", label: "Carpent." },
-  Mason: { icon: "cube", label: "Mason" },
-  Painter: { icon: "color-palette", label: "Painter" },
+const skillIcons: Record<Skill, { icon: string }> = {
+  Plumber: { icon: "water" },
+  Electrician: { icon: "flash" },
+  Carpenter: { icon: "hammer" },
+  Mason: { icon: "cube" },
+  Painter: { icon: "color-palette" },
 };
 
 const sortIcons: Record<SortOption, string> = {
@@ -41,6 +42,13 @@ const sortIcons: Record<SortOption, string> = {
   experience: "time-outline",
   price_low: "trending-down",
   price_high: "trending-up",
+};
+
+const sortLabelKeys: Record<SortOption, string> = {
+  rating: "sort.topRated",
+  experience: "sort.mostExperienced",
+  price_low: "sort.priceLowToHigh",
+  price_high: "sort.priceHighToLow",
 };
 
 const FilterBar: React.FC<FilterBarProps> = ({
@@ -52,6 +60,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
   onSortChange,
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const { t } = useTranslation();
 
   const activeFilterCount = (selectedLocation ? 1 : 0) + (selectedSort ? 1 : 0);
 
@@ -80,7 +89,8 @@ const FilterBar: React.FC<FilterBarProps> = ({
           {SKILLS.map((skill) => {
             const isSelected = selectedSkill === skill;
             const color = skillColors[skill];
-            const { icon, label } = skillIcons[skill];
+            const { icon } = skillIcons[skill];
+            const label = t(`skillShort.${skill}`);
 
             return (
               <TouchableOpacity
@@ -168,7 +178,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
                   : "text-text-muted"
               }`}
             >
-              Filters
+              {t("filters.filters")}
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -192,11 +202,8 @@ const FilterBar: React.FC<FilterBarProps> = ({
                   className="w-2 h-2 rounded-full"
                   style={{ backgroundColor: skillColors[selectedSkill] }}
                 />
-                <Text
-                  className="text-xs font-semibold"
-                  style={{ color: skillColors[selectedSkill] }}
-                >
-                  {selectedSkill}
+                <Text className="text-xs font-semibold" style={{ color: skillColors[selectedSkill] }}>
+                  {t(`skills.${selectedSkill}`)}
                 </Text>
                 <Ionicons
                   name="close"
@@ -224,7 +231,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
               >
                 <Ionicons name="swap-vertical" size={12} color="#1E40AF" />
                 <Text className="text-xs font-semibold text-primary">
-                  {SORT_OPTIONS.find((o) => o.value === selectedSort)?.label}
+                  {t(sortLabelKeys[selectedSort])}
                 </Text>
                 <Ionicons name="close" size={12} color="#1E40AF" />
               </TouchableOpacity>
@@ -234,7 +241,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
               onPress={clearAllFilters}
             >
               <Ionicons name="trash-outline" size={12} color="#DC2626" />
-              <Text className="text-xs font-semibold text-danger">Clear</Text>
+              <Text className="text-xs font-semibold text-danger">{t("filters.clear")}</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -246,7 +253,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
           {/* Panel Header */}
           <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
             <Text className="text-sm font-bold text-text uppercase tracking-wider">
-              Advanced Filters
+              {t("filters.advancedFilters")}
             </Text>
             {(selectedLocation || selectedSort) && (
               <TouchableOpacity
@@ -257,7 +264,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
                 }}
               >
                 <Ionicons name="refresh" size={14} color="#DC2626" />
-                <Text className="text-xs font-semibold text-danger">Reset</Text>
+                <Text className="text-xs font-semibold text-danger">{t("common.reset")}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -267,7 +274,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
             <View className="flex-row items-center gap-1.5 mb-2.5">
               <Ionicons name="location" size={14} color="#1E40AF" />
               <Text className="text-xs font-semibold text-primary uppercase tracking-wide">
-                City
+                {t("filters.city")}
               </Text>
             </View>
             <View className="flex-row flex-wrap gap-2">
@@ -306,7 +313,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
             <View className="flex-row items-center gap-1.5 mb-2.5">
               <Ionicons name="swap-vertical" size={14} color="#1E40AF" />
               <Text className="text-xs font-semibold text-primary uppercase tracking-wide">
-                Sort By
+                {t("filters.sortBy")}
               </Text>
             </View>
             <View className="flex-row flex-wrap gap-2">
@@ -334,7 +341,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
                         isSelected ? "text-white" : "text-text-secondary"
                       }`}
                     >
-                      {option.label}
+                      {t(sortLabelKeys[option.value])}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -347,7 +354,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
             className="mx-4 mb-4 mt-1 py-3 rounded-xl bg-primary items-center"
             onPress={toggleExpanded}
           >
-            <Text className="text-sm font-bold text-white">Apply Filters</Text>
+            <Text className="text-sm font-bold text-white">{t("filters.applyFilters")}</Text>
           </TouchableOpacity>
         </View>
       )}

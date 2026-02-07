@@ -9,30 +9,31 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTranslation } from "react-i18next";
 import { colors } from "../../src/constants/colors";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 
 const TAB_CONFIG: {
   name: string;
-  label: string;
+  labelKey: string;
   activeIcon: keyof typeof Ionicons.glyphMap;
   inactiveIcon: keyof typeof Ionicons.glyphMap;
 }[] = [
   {
     name: "index",
-    label: "Home",
+    labelKey: "tabs.home",
     activeIcon: "home",
     inactiveIcon: "home-outline",
   },
   {
     name: "favorites",
-    label: "Favorites",
+    labelKey: "tabs.favorites",
     activeIcon: "heart",
     inactiveIcon: "heart-outline",
   },
   {
     name: "admin",
-    label: "Manage",
+    labelKey: "tabs.manage",
     activeIcon: "construct",
     inactiveIcon: "construct-outline",
   },
@@ -40,6 +41,7 @@ const TAB_CONFIG: {
 
 function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   return (
     <View
@@ -55,6 +57,7 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
         {state.routes.map((route, index) => {
           const focused = state.index === index;
           const config = TAB_CONFIG[index];
+          const label = t(config.labelKey);
 
           const onPress = () => {
             const event = navigation.emit({
@@ -83,7 +86,7 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
                 activeOpacity={0.9}
                 accessibilityRole="button"
                 accessibilityState={{ selected: true }}
-                accessibilityLabel={config.label}
+                accessibilityLabel={label}
               >
                 <LinearGradient
                   colors={["#2563EB", "#1D4ED8"]}
@@ -96,7 +99,7 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
                     size={18}
                     color="#FFFFFF"
                   />
-                  <Text style={styles.activeLabel}>{config.label}</Text>
+                  <Text style={styles.activeLabel}>{label}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             );
@@ -111,7 +114,7 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
               style={styles.inactiveTab}
               accessibilityRole="button"
               accessibilityState={{ selected: false }}
-              accessibilityLabel={config.label}
+              accessibilityLabel={label}
             >
               <Ionicons name={config.inactiveIcon} size={23} color="#94A3B8" />
             </TouchableOpacity>
@@ -171,6 +174,8 @@ const styles = StyleSheet.create({
 });
 
 export default function TabLayout() {
+  const { t } = useTranslation();
+
   return (
     <Tabs
       tabBar={(props) => <FloatingTabBar {...props} />}
@@ -187,8 +192,8 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ headerShown: false }} />
-      <Tabs.Screen name="favorites" options={{ title: "Favorites" }} />
-      <Tabs.Screen name="admin" options={{ title: "Manage Technicians" }} />
+      <Tabs.Screen name="favorites" options={{ title: t("tabs.favorites") }} />
+      <Tabs.Screen name="admin" options={{ title: t("screens.manageTechnicians") }} />
     </Tabs>
   );
 }

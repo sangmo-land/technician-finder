@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 
 interface SelectFieldProps<T extends string> {
   label: string;
@@ -16,9 +17,11 @@ function SelectField<T extends string>({
   value,
   options,
   onSelect,
-  placeholder = "Select an option",
+  placeholder,
   error,
 }: SelectFieldProps<T>) {
+  const { t } = useTranslation();
+  const displayPlaceholder = placeholder ?? t("selectField.selectOption");
   const [modalVisible, setModalVisible] = React.useState(false);
 
   const handleSelect = (option: T) => {
@@ -40,7 +43,7 @@ function SelectField<T extends string>({
         <Text
           className={`text-base ${value ? "text-text" : "text-text-light"}`}
         >
-          {value || placeholder}
+          {value || displayPlaceholder}
         </Text>
         <View className="w-7 h-7 rounded-full bg-surface items-center justify-center">
           <Ionicons name="chevron-down" size={18} color="#475569" />

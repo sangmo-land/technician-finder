@@ -84,13 +84,13 @@ export default function FavoritesScreen() {
           renderItem={renderTechnician}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={renderHeader}
-          contentContainerStyle={{ paddingBottom: 32 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              colors={['#1E40AF']}
+              colors={["#1E40AF"]}
               tintColor="#1E40AF"
             />
           }

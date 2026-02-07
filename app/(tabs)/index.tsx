@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { View, FlatList, RefreshControl, Text } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import { Technician, Skill, SortOption } from "../../src/types";
 import {
   getAllTechnicians,
@@ -11,13 +14,20 @@ import {
   TechnicianCard,
   FilterBar,
   SearchBar,
-  SortBar,
   EmptyState,
   LoadingSpinner,
 } from "../../src/components";
 
+function getGreeting(): { text: string; icon: string } {
+  const hour = new Date().getHours();
+  if (hour < 12) return { text: "Good Morning", icon: "sunny" };
+  if (hour < 17) return { text: "Good Afternoon", icon: "partly-sunny" };
+  return { text: "Good Evening", icon: "moon" };
+}
+
 export default function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -48,7 +58,6 @@ export default function HomeScreen() {
   const filteredTechnicians = useMemo(() => {
     let filtered = technicians;
 
-    // Text search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -59,17 +68,14 @@ export default function HomeScreen() {
       );
     }
 
-    // Skill filter
     if (selectedSkill) {
       filtered = filtered.filter((t) => t.skill === selectedSkill);
     }
 
-    // Location filter
     if (selectedLocation) {
       filtered = filtered.filter((t) => t.location === selectedLocation);
     }
 
-    // Sort
     if (selectedSort) {
       filtered = [...filtered].sort((a, b) => {
         switch (selectedSort) {
@@ -90,19 +96,36 @@ export default function HomeScreen() {
     return filtered;
   }, [technicians, searchQuery, selectedSkill, selectedLocation, selectedSort]);
 
-  // Derived stats
-  const uniqueSkills = useMemo(
-    () => new Set(technicians.map((t) => t.skill)).size,
+  // Featured expert: highest-rated available technician
+  const featuredExpert = useMemo(() => {
+    const available = technicians.filter(
+      (t) => t.availability === "available" && (t.rating ?? 0) > 0,
+    );
+    if (available.length === 0) return null;
+    return available.reduce((best, t) =>
+      (t.rating ?? 0) > (best.rating ?? 0) ? t : best,
+    );
+  }, [technicians]);
+
+  // Stats
+  const availableCount = useMemo(
+    () => technicians.filter((t) => t.availability === "available").length,
     [technicians],
   );
   const uniqueCities = useMemo(
     () => new Set(technicians.map((t) => t.location)).size,
     [technicians],
   );
-  const availableCount = useMemo(
-    () => technicians.filter((t) => t.availability === "available").length,
-    [technicians],
-  );
+
+  const greeting = getGreeting();
+  const hasActiveFilters =
+    !!selectedSkill || !!selectedLocation || !!searchQuery.trim();
+
+  // Technicians list excluding the featured one (if no filters active)
+  const listTechnicians = useMemo(() => {
+    if (hasActiveFilters || !featuredExpert) return filteredTechnicians;
+    return filteredTechnicians.filter((t) => t.id !== featuredExpert.id);
+  }, [filteredTechnicians, featuredExpert, hasActiveFilters]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -120,47 +143,48 @@ export default function HomeScreen() {
     />
   );
 
-  const hasActiveFilters =
-    !!selectedSkill || !!selectedLocation || !!searchQuery.trim();
-
   const renderHeader = () => (
-    <View className="px-4 pt-4 pb-2">
-      <View className="bg-primary rounded-2xl p-5 shadow-lg">
-        <Text className="text-2xl font-semibold text-surface mb-1">
-          Find Your Expert
-        </Text>
-        <Text className="text-base text-primary-muted mb-4">
-          Skilled technicians across Cameroon
-        </Text>
-        <View className="flex-row items-center justify-around bg-white/15 rounded-xl py-3">
-          <View className="items-center flex-1">
-            <Text className="text-2xl font-semibold text-surface">
-              {technicians.length}
-            </Text>
-            <Text className="text-xs font-medium text-primary-muted mt-0.5">
-              Technicians
+    <View>
+      {/* Featured Expert Spotlight */}
+      {!hasActiveFilters && featuredExpert && (
+        <View className="mt-3">
+          <View className="flex-row items-center gap-2 px-4 mb-2">
+            <Ionicons name="trophy" size={16} color="#F59E0B" />
+            <Text className="text-sm font-bold text-text uppercase tracking-wider">
+              Featured Expert
             </Text>
           </View>
-          <View className="w-px h-8 bg-white/20" />
-          <View className="items-center flex-1">
-            <Text className="text-2xl font-semibold text-surface">
-              {availableCount}
-            </Text>
-            <Text className="text-xs font-medium text-primary-muted mt-0.5">
-              Available
-            </Text>
-          </View>
-          <View className="w-px h-8 bg-white/20" />
-          <View className="items-center flex-1">
-            <Text className="text-2xl font-semibold text-surface">
-              {uniqueCities}
-            </Text>
-            <Text className="text-xs font-medium text-primary-muted mt-0.5">
-              Cities
-            </Text>
-          </View>
+          <TechnicianCard
+            technician={featuredExpert}
+            onPress={() => handleTechnicianPress(featuredExpert)}
+            variant="featured"
+          />
+        </View>
+      )}
+
+      {/* Section Header: All Technicians */}
+      <View className="flex-row items-center justify-between px-4 mt-4 mb-1">
+        <View className="flex-row items-center gap-2">
+          <Ionicons name="people" size={16} color="#1E40AF" />
+          <Text className="text-sm font-bold text-text uppercase tracking-wider">
+            {hasActiveFilters ? "Results" : "All Technicians"}
+          </Text>
+        </View>
+        <View className="bg-primary-muted px-2.5 py-1 rounded-lg">
+          <Text className="text-xs font-bold text-primary">
+            {listTechnicians.length}
+          </Text>
         </View>
       </View>
+
+      {/* Contextual filter description */}
+      {hasActiveFilters && (
+        <Text className="text-xs text-text-muted px-4 mb-1">
+          {selectedSkill ? `${selectedSkill}s` : "Technicians"}
+          {selectedLocation ? ` in ${selectedLocation}` : ""}
+          {searchQuery.trim() ? ` matching "${searchQuery.trim()}"` : ""}
+        </Text>
+      )}
     </View>
   );
 
@@ -170,28 +194,79 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      {/* Search bar */}
-      <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
+      {/* Gradient Hero Header */}
+      <LinearGradient
+        colors={["#1E3A8A", "#1E40AF", "#2563EB"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        className="px-4 pb-5"
+        style={{ paddingTop: insets.top + 12 }}
+      >
+        {/* Greeting */}
+        <View className="flex-row items-center gap-2 mb-1">
+          <Ionicons name={greeting.icon as any} size={18} color="#FDE68A" />
+          <Text className="text-sm font-medium" style={{ color: "#FDE68A" }}>
+            {greeting.text}
+          </Text>
+        </View>
 
-      {/* Filters + Sort */}
+        {/* Title */}
+        <Text className="text-2xl font-bold text-white mb-1">
+          Find the perfect technician
+        </Text>
+
+        {/* Inline Stats */}
+        <View className="flex-row items-center gap-2 mb-4">
+          <View className="flex-row items-center gap-1">
+            <View className="w-1.5 h-1.5 rounded-full bg-white" />
+            <Text
+              className="text-xs font-semibold"
+              style={{ color: "rgba(255,255,255,0.75)" }}
+            >
+              {technicians.length} Experts
+            </Text>
+          </View>
+          <Text style={{ color: "rgba(255,255,255,0.35)" }}>·</Text>
+          <View className="flex-row items-center gap-1">
+            <View className="w-1.5 h-1.5 rounded-full bg-green-400" />
+            <Text
+              className="text-xs font-semibold"
+              style={{ color: "rgba(255,255,255,0.75)" }}
+            >
+              {availableCount} Available
+            </Text>
+          </View>
+          <Text style={{ color: "rgba(255,255,255,0.35)" }}>·</Text>
+          <View className="flex-row items-center gap-1">
+            <View className="w-1.5 h-1.5 rounded-full bg-amber-300" />
+            <Text
+              className="text-xs font-semibold"
+              style={{ color: "rgba(255,255,255,0.75)" }}
+            >
+              {uniqueCities} Cities
+            </Text>
+          </View>
+        </View>
+
+        {/* Frosted Search Bar */}
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          variant="hero"
+        />
+      </LinearGradient>
+
+      {/* Skill Icons + Collapsible Filters */}
       <FilterBar
         selectedSkill={selectedSkill}
         selectedLocation={selectedLocation}
+        selectedSort={selectedSort}
         onSkillChange={setSelectedSkill}
         onLocationChange={setSelectedLocation}
+        onSortChange={setSelectedSort}
       />
-      <SortBar selectedSort={selectedSort} onSortChange={setSelectedSort} />
 
-      {/* Results count */}
-      {hasActiveFilters && (
-        <View className="px-4 pb-2">
-          <Text className="text-sm text-text-secondary">
-            {filteredTechnicians.length} result
-            {filteredTechnicians.length !== 1 ? "s" : ""} found
-          </Text>
-        </View>
-      )}
-
+      {/* Content */}
       {filteredTechnicians.length === 0 ? (
         <EmptyState
           icon="👷"
@@ -204,11 +279,11 @@ export default function HomeScreen() {
         />
       ) : (
         <FlatList
-          data={filteredTechnicians}
+          data={listTechnicians}
           renderItem={renderTechnician}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={renderHeader}
-          contentContainerStyle={{ paddingBottom: 32 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl

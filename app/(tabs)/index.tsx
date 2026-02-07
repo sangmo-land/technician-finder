@@ -174,7 +174,7 @@ export default function HomeScreen() {
       {/* Section Header: All Technicians */}
       <View className="flex-row items-center justify-between px-4 mt-4 mb-1">
         <View className="flex-row items-center gap-2">
-          <Ionicons name="people" size={16} color="#1E40AF" />
+          <Ionicons name="people" size={16} color="#065F46" />
           <Text className="text-sm font-bold text-text uppercase tracking-wider">
             {hasActiveFilters ? t("home.results") : t("home.allTechnicians")}
           </Text>
@@ -209,7 +209,7 @@ export default function HomeScreen() {
     <View className="flex-1 bg-background">
       {/* Gradient Hero Header */}
       <LinearGradient
-        colors={["#1E3A8A", "#1E40AF", "#2563EB"]}
+        colors={["#022C22", "#065F46", "#047857"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="px-4 pb-5"
@@ -321,8 +321,8 @@ export default function HomeScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              colors={["#1E40AF"]}
-              tintColor="#1E40AF"
+              colors={["#065F46"]}
+              tintColor="#065F46"
             />
           }
         />

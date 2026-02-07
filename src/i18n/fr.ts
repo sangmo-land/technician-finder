@@ -12,6 +12,7 @@ export default {
     reset: "Réinitialiser",
     goBack: "Retour",
     save: "Enregistrer",
+    yearsShort: "an",
   },
 
   // Tab labels
@@ -42,9 +43,10 @@ export default {
     results: "Résultats",
     allTechnicians: "Tous les techniciens",
     noTechniciansTitle: "Aucun technicien trouvé",
-    noTechniciansFiltered: "Essayez d'ajuster votre recherche ou vos filtres pour voir plus de résultats.",
+    noTechniciansFiltered:
+      "Essayez d'ajuster votre recherche ou vos filtres pour voir plus de résultats.",
     noTechniciansEmpty: "Aucun technicien disponible. Revenez plus tard !",
-    filterDescription: "{{skill}} à {{location}} correspondant à \"{{query}}\"",
+    filterDescription: '{{skill}} à {{location}} correspondant à "{{query}}"',
     technicians: "Techniciens",
   },
 
@@ -106,7 +108,8 @@ export default {
   // Technician detail screen
   detail: {
     notFoundTitle: "Technicien introuvable",
-    notFoundMessage: "Le technicien que vous recherchez n'existe pas ou a été supprimé.",
+    notFoundMessage:
+      "Le technicien que vous recherchez n'existe pas ou a été supprimé.",
     yearsExp: "Ans d'exp.",
     jobsDone: "Travaux",
     about: "À propos",
@@ -117,7 +120,8 @@ export default {
     removeFromFavorites: "Retirer des favoris",
     addToFavorites: "Ajouter aux favoris",
     cannotCallTitle: "Appel impossible",
-    cannotCallMessage: "Les appels téléphoniques ne sont pas pris en charge sur cet appareil.",
+    cannotCallMessage:
+      "Les appels téléphoniques ne sont pas pris en charge sur cet appareil.",
     failedCall: "Impossible d'ouvrir l'application téléphone.",
   },
 
@@ -127,12 +131,14 @@ export default {
     registered: "{{count}} techniciens inscrits",
     addTechnician: "Ajouter un technicien",
     noTechniciansTitle: "Aucun technicien",
-    noTechniciansMessage: "Ajoutez votre premier technicien en utilisant le bouton ci-dessus.",
+    noTechniciansMessage:
+      "Ajoutez votre premier technicien en utilisant le bouton ci-dessus.",
     deleteTitle: "Supprimer le technicien",
     deleteMessage: "Êtes-vous sûr de vouloir supprimer {{name}} ?",
     deleteFailed: "Échec de la suppression du technicien.",
     resetTitle: "Réinitialiser les données",
-    resetMessage: "Cela restaurera tous les techniciens aux données d'exemple d'origine. Continuer ?",
+    resetMessage:
+      "Cela restaurera tous les techniciens aux données d'exemple d'origine. Continuer ?",
     resetFailed: "Échec de la réinitialisation des données.",
   },
 
@@ -142,7 +148,8 @@ export default {
     countSingular: "{{count}} technicien enregistré",
     countPlural: "{{count}} techniciens enregistrés",
     emptyTitle: "Aucun favori",
-    emptyMessage: "Appuyez sur l'icône cœur sur le profil d'un technicien pour l'enregistrer ici.",
+    emptyMessage:
+      "Appuyez sur l'icône cœur sur le profil d'un technicien pour l'enregistrer ici.",
   },
 
   // Add technician form
@@ -207,8 +214,10 @@ export default {
     removePhoto: "Supprimer la photo",
     removePhotoMessage: "Êtes-vous sûr de vouloir supprimer cette photo ?",
     permissionRequired: "Autorisation requise",
-    cameraPermission: "L'accès à la caméra est nécessaire pour prendre des photos.",
-    libraryPermission: "L'accès à la photothèque est nécessaire pour sélectionner des images.",
+    cameraPermission:
+      "L'accès à la caméra est nécessaire pour prendre des photos.",
+    libraryPermission:
+      "L'accès à la photothèque est nécessaire pour sélectionner des images.",
     maxPhotos: "Maximum {{max}} photos autorisées",
     emptyGallery: "Aucune photo de travaux",
     viewFullscreen: "Appuyez pour voir",

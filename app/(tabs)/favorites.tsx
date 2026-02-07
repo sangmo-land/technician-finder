@@ -78,14 +78,14 @@ export default function FavoritesScreen() {
   return (
     <View className="flex-1 bg-background">
       {favorites.length === 0 ? (
-        <>
+        <View style={{ flex: 1, paddingBottom: 100 }}>
           {renderHeader()}
           <EmptyState
             icon="❤️"
             title={t("favorites.emptyTitle")}
             message={t("favorites.emptyMessage")}
           />
-        </>
+        </View>
       ) : (
         <FlatList
           data={favorites}
@@ -98,8 +98,8 @@ export default function FavoritesScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              colors={["#1E40AF"]}
-              tintColor="#1E40AF"
+              colors={["#065F46"]}
+              tintColor="#065F46"
             />
           }
         />

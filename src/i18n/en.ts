@@ -12,6 +12,7 @@ export default {
     reset: "Reset",
     goBack: "Go Back",
     save: "Save",
+    yearsShort: "yr",
   },
 
   // Tab labels
@@ -42,9 +43,10 @@ export default {
     results: "Results",
     allTechnicians: "All Technicians",
     noTechniciansTitle: "No technicians found",
-    noTechniciansFiltered: "Try adjusting your search or filters to see more results.",
+    noTechniciansFiltered:
+      "Try adjusting your search or filters to see more results.",
     noTechniciansEmpty: "No technicians available. Check back later!",
-    filterDescription: "{{skill}} in {{location}} matching \"{{query}}\"",
+    filterDescription: '{{skill}} in {{location}} matching "{{query}}"',
     technicians: "Technicians",
   },
 
@@ -106,7 +108,8 @@ export default {
   // Technician detail screen
   detail: {
     notFoundTitle: "Technician not found",
-    notFoundMessage: "The technician you're looking for doesn't exist or has been removed.",
+    notFoundMessage:
+      "The technician you're looking for doesn't exist or has been removed.",
     yearsExp: "Years Exp.",
     jobsDone: "Jobs Done",
     about: "About",
@@ -132,7 +135,8 @@ export default {
     deleteMessage: "Are you sure you want to delete {{name}}?",
     deleteFailed: "Failed to delete technician.",
     resetTitle: "Reset Data",
-    resetMessage: "This will restore all technicians to the original sample data. Continue?",
+    resetMessage:
+      "This will restore all technicians to the original sample data. Continue?",
     resetFailed: "Failed to reset data.",
   },
 
@@ -142,7 +146,8 @@ export default {
     countSingular: "{{count}} technician saved",
     countPlural: "{{count}} technicians saved",
     emptyTitle: "No favorites yet",
-    emptyMessage: "Tap the heart icon on a technician's profile to save them here for quick access.",
+    emptyMessage:
+      "Tap the heart icon on a technician's profile to save them here for quick access.",
   },
 
   // Add technician form

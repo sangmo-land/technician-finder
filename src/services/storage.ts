@@ -15,11 +15,16 @@ export const initializeStorage = async (): Promise<void> => {
     const initialized = await AsyncStorage.getItem(INITIALIZED_KEY);
     if (!initialized) {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(seedTechnicians));
-      await AsyncStorage.setItem(INITIALIZED_KEY, "v3");
-    } else if (initialized === "true" || initialized === "v2") {
-      // Migrate from older data model → re-seed with gallery field
+      await AsyncStorage.setItem(INITIALIZED_KEY, "v5");
+    } else if (
+      initialized === "true" ||
+      initialized === "v2" ||
+      initialized === "v3" ||
+      initialized === "v4"
+    ) {
+      // Migrate from older data model → re-seed with reliable image URLs
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(seedTechnicians));
-      await AsyncStorage.setItem(INITIALIZED_KEY, "v3");
+      await AsyncStorage.setItem(INITIALIZED_KEY, "v5");
     }
   } catch (error) {
     console.error("Error initializing storage:", error);

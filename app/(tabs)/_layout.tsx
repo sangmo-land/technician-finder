@@ -45,6 +45,7 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
 
   return (
     <View
+      pointerEvents="box-none"
       style={[
         styles.barOuter,
         {
@@ -53,6 +54,17 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
         },
       ]}
     >
+      {/* Gradient fade so content doesn't show behind the bar */}
+      <LinearGradient
+        colors={[
+          "rgba(248,250,252,0)",
+          "rgba(248,250,252,0.85)",
+          "rgba(248,250,252,1)",
+        ]}
+        locations={[0, 0.35, 0.65]}
+        pointerEvents="none"
+        style={StyleSheet.absoluteFill}
+      />
       <View style={styles.barInner}>
         {state.routes.map((route, index) => {
           const focused = state.index === index;
@@ -89,7 +101,7 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
                 accessibilityLabel={label}
               >
                 <LinearGradient
-                  colors={["#2563EB", "#1D4ED8"]}
+                  colors={["#047857", "#065F46"]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.activePill}
@@ -133,16 +145,17 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: "center",
     paddingHorizontal: 24,
+    paddingTop: 18,
   },
   barInner: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#FFFFFF",
-    borderRadius: 28,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    gap: 6,
+    borderRadius: 32,
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+    gap: 4,
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
@@ -154,9 +167,9 @@ const styles = StyleSheet.create({
   activePill: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 22,
+    borderRadius: 26,
     gap: 8,
   },
   activeLabel: {
@@ -169,7 +182,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
 });
 

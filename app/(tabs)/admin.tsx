@@ -142,7 +142,7 @@ export default function AdminScreen() {
             className="w-10 h-10 rounded-lg bg-primary-muted items-center justify-center"
             onPress={() => router.push(`/edit-technician/${item.id}`)}
           >
-            <Ionicons name="pencil" size={18} color="#1E40AF" />
+            <Ionicons name="pencil" size={18} color="#065F46" />
           </TouchableOpacity>
           <TouchableOpacity
             className="w-10 h-10 rounded-lg bg-danger-light items-center justify-center"
@@ -168,7 +168,7 @@ export default function AdminScreen() {
             </Text>
           </View>
           <View className="w-14 h-14 rounded-xl bg-primary-muted items-center justify-center">
-            <Ionicons name="people" size={28} color="#1E40AF" />
+            <Ionicons name="people" size={28} color="#065F46" />
           </View>
         </View>
       </View>
@@ -188,7 +188,7 @@ export default function AdminScreen() {
           className="w-12 h-12 rounded-xl bg-surface items-center justify-center border-[1.5px] border-primary"
           onPress={handleReset}
         >
-          <Ionicons name="refresh" size={20} color="#1E40AF" />
+          <Ionicons name="refresh" size={20} color="#065F46" />
         </TouchableOpacity>
       </View>
     </View>
@@ -201,14 +201,14 @@ export default function AdminScreen() {
   return (
     <View className="flex-1 bg-background">
       {technicians.length === 0 ? (
-        <>
+        <View style={{ flex: 1, paddingBottom: 100 }}>
           {renderHeader()}
           <EmptyState
             icon="📋"
             title={t("admin.noTechniciansTitle")}
             message={t("admin.noTechniciansMessage")}
           />
-        </>
+        </View>
       ) : (
         <FlatList
           data={technicians}
@@ -221,8 +221,8 @@ export default function AdminScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              colors={["#1E40AF"]}
-              tintColor="#1E40AF"
+              colors={["#065F46"]}
+              tintColor="#065F46"
             />
           }
         />

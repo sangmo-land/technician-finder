@@ -138,7 +138,7 @@ export default function AddTechnicianScreen() {
         {/* Form Header */}
         <View className="items-center mb-6">
           <View className="w-[72px] h-[72px] rounded-full bg-primary-muted items-center justify-center mb-4">
-            <Ionicons name="person-add" size={32} color="#1E40AF" />
+            <Ionicons name="person-add" size={32} color="#065F46" />
           </View>
           <Text className="text-2xl font-semibold text-text mb-1">
             {t("form.newTechnician")}

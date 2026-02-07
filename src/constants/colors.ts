@@ -9,12 +9,12 @@ export const skillColors: Record<string, string> = {
 
 // Raw color values for use in navigation headers and other non-className contexts
 export const colors = {
-  primary: "#1E40AF",
+  primary: "#065F46",
   surface: "#FFFFFF",
   background: "#F8FAFC",
   textSecondary: "#475569",
   textMuted: "#94A3B8",
-  primaryMuted: "#DBEAFE",
+  primaryMuted: "#D1FAE5",
   successLight: "#D1FAE5",
   warningLight: "#FEF3C7",
   dangerLight: "#FEE2E2",

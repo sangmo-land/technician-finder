@@ -266,7 +266,7 @@ export default function TechnicianDetailsScreen() {
 
           <View className="flex-row items-center py-2">
             <View className="w-11 h-11 rounded-lg items-center justify-center mr-4 bg-primary-muted">
-              <Ionicons name="location" size={20} color="#1E40AF" />
+              <Ionicons name="location" size={20} color="#065F46" />
             </View>
             <View className="flex-1">
               <Text className="text-xs font-medium text-text-muted mb-0.5">

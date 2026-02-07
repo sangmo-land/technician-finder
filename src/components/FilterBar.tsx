@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,8 +7,12 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import { Skill, SKILLS, LOCATIONS, SortOption, SORT_OPTIONS } from "../types";
 import { skillColors } from "../constants/colors";
@@ -60,9 +64,74 @@ const FilterBar: React.FC<FilterBarProps> = ({
   onSortChange,
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const [showRightFade, setShowRightFade] = useState(true);
+  const [hasScrolled, setHasScrolled] = useState(false);
+  const nudgeAnim = useRef(new Animated.Value(0)).current;
   const { t } = useTranslation();
 
   const activeFilterCount = (selectedLocation ? 1 : 0) + (selectedSort ? 1 : 0);
+
+  // Pulsing nudge animation that repeats every few seconds until user scrolls
+  useEffect(() => {
+    if (hasScrolled) return;
+
+    const runNudge = () => {
+      Animated.sequence([
+        Animated.timing(nudgeAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(nudgeAnim, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(nudgeAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(nudgeAnim, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    };
+
+    // Initial nudge after a short delay
+    const initialTimer = setTimeout(runNudge, 1500);
+    // Repeat every 5 seconds
+    const interval = setInterval(runNudge, 6000);
+
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(interval);
+    };
+  }, [hasScrolled, nudgeAnim]);
+
+  const nudgeTranslateX = nudgeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -6],
+  });
+  const nudgeOpacity = nudgeAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.4, 1, 0.4],
+  });
+
+  const onSkillScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
+      const distanceFromEnd =
+        contentSize.width - layoutMeasurement.width - contentOffset.x;
+      setShowRightFade(distanceFromEnd > 20);
+      if (contentOffset.x > 10) {
+        setHasScrolled(true);
+      }
+    },
+    [],
+  );
 
   const toggleExpanded = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -80,108 +149,167 @@ const FilterBar: React.FC<FilterBarProps> = ({
   return (
     <View>
       {/* Skill Category Icons */}
-      <View className="px-4 pt-3 pb-2">
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 12 }}
-        >
-          {SKILLS.map((skill) => {
-            const isSelected = selectedSkill === skill;
-            const color = skillColors[skill];
-            const { icon } = skillIcons[skill];
-            const label = t(`skillShort.${skill}`);
-
-            return (
-              <TouchableOpacity
-                key={skill}
-                className="items-center"
-                style={{ width: 64 }}
-                onPress={() => onSkillChange(isSelected ? null : skill)}
-                activeOpacity={0.7}
-              >
-                <View
-                  className={`w-14 h-14 rounded-2xl items-center justify-center mb-1.5 ${
-                    isSelected ? "" : "border border-border"
-                  }`}
-                  style={
-                    isSelected
-                      ? { backgroundColor: color }
-                      : { backgroundColor: `${color}10` }
-                  }
-                >
-                  {isSelected && (
-                    <View
-                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-success items-center justify-center"
-                      style={{ borderWidth: 2, borderColor: "#F8FAFC" }}
-                    >
-                      <Ionicons name="checkmark" size={11} color="#FFFFFF" />
-                    </View>
-                  )}
-                  <Ionicons
-                    name={icon as any}
-                    size={24}
-                    color={isSelected ? "#FFFFFF" : color}
-                  />
-                </View>
-                <Text
-                  className={`text-xs font-semibold text-center ${
-                    isSelected ? "text-text" : "text-text-muted"
-                  }`}
-                  numberOfLines={1}
-                >
-                  {label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-
-          {/* Divider */}
-          <View className="w-px self-stretch my-2 bg-border" />
-
-          {/* Filter Toggle Button */}
-          <TouchableOpacity
-            className="items-center"
-            style={{ width: 64 }}
-            onPress={toggleExpanded}
-            activeOpacity={0.7}
+      <View className="pt-3 pb-2">
+        <View style={{ position: "relative" }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 12, paddingHorizontal: 16 }}
+            onScroll={onSkillScroll}
+            scrollEventThrottle={16}
           >
-            <View
-              className={`w-14 h-14 rounded-2xl items-center justify-center mb-1.5 ${
-                expanded || activeFilterCount > 0
-                  ? "bg-primary"
-                  : "bg-background border border-border"
-              }`}
-            >
-              <Ionicons
-                name="options"
-                size={24}
-                color={
-                  expanded || activeFilterCount > 0 ? "#FFFFFF" : "#94A3B8"
-                }
-              />
-              {activeFilterCount > 0 && (
-                <View
-                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-danger items-center justify-center"
-                  style={{ borderWidth: 2, borderColor: "#F8FAFC" }}
+            {SKILLS.map((skill) => {
+              const isSelected = selectedSkill === skill;
+              const color = skillColors[skill];
+              const { icon } = skillIcons[skill];
+              const label = t(`skillShort.${skill}`);
+
+              return (
+                <TouchableOpacity
+                  key={skill}
+                  className="items-center"
+                  style={{ width: 64 }}
+                  onPress={() => onSkillChange(isSelected ? null : skill)}
+                  activeOpacity={0.7}
                 >
-                  <Text className="text-[10px] font-bold text-white">
-                    {activeFilterCount}
+                  <View
+                    className="w-14 h-14 rounded-2xl items-center justify-center mb-1.5"
+                    style={[
+                      {
+                        backgroundColor: isSelected ? color : "#FFFFFF",
+                        borderWidth: isSelected ? 0 : 1,
+                        borderColor: "#E8ECF0",
+                      },
+                      Platform.select({
+                        ios: {
+                          shadowColor: "#000",
+                          shadowOffset: { width: 0, height: 6 },
+                          shadowOpacity: isSelected ? 0.3 : 0.15,
+                          shadowRadius: isSelected ? 10 : 8,
+                        },
+                        android: {
+                          elevation: isSelected ? 12 : 8,
+                        },
+                      }),
+                    ]}
+                  >
+                    {isSelected && (
+                      <View
+                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-success items-center justify-center"
+                        style={{ borderWidth: 2, borderColor: "#F8FAFC" }}
+                      >
+                        <Ionicons name="checkmark" size={11} color="#FFFFFF" />
+                      </View>
+                    )}
+                    <Ionicons
+                      name={icon as any}
+                      size={24}
+                      color={isSelected ? "#FFFFFF" : color}
+                    />
+                  </View>
+                  <Text
+                    className={`text-xs font-semibold text-center ${
+                      isSelected ? "text-text" : "text-text-muted"
+                    }`}
+                    numberOfLines={1}
+                  >
+                    {label}
                   </Text>
-                </View>
-              )}
-            </View>
-            <Text
-              className={`text-xs font-semibold text-center ${
-                expanded || activeFilterCount > 0
-                  ? "text-primary"
-                  : "text-text-muted"
-              }`}
+                </TouchableOpacity>
+              );
+            })}
+
+            {/* Divider */}
+            <View className="w-px self-stretch my-2 bg-border" />
+
+            {/* Filter Toggle Button */}
+            <TouchableOpacity
+              className="items-center"
+              style={{ width: 64 }}
+              onPress={toggleExpanded}
+              activeOpacity={0.7}
             >
-              {t("filters.filters")}
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
+              <View
+                className={`w-14 h-14 rounded-2xl items-center justify-center mb-1.5 ${
+                  expanded || activeFilterCount > 0
+                    ? "bg-primary"
+                    : "bg-background border border-border"
+                }`}
+              >
+                <Ionicons
+                  name="options"
+                  size={24}
+                  color={
+                    expanded || activeFilterCount > 0 ? "#FFFFFF" : "#94A3B8"
+                  }
+                />
+                {activeFilterCount > 0 && (
+                  <View
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-danger items-center justify-center"
+                    style={{ borderWidth: 2, borderColor: "#F8FAFC" }}
+                  >
+                    <Text className="text-[10px] font-bold text-white">
+                      {activeFilterCount}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <Text
+                className={`text-xs font-semibold text-center ${
+                  expanded || activeFilterCount > 0
+                    ? "text-primary"
+                    : "text-text-muted"
+                }`}
+              >
+                {t("filters.filters")}
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+
+          {/* Right fade hint */}
+          {showRightFade && (
+            <LinearGradient
+              colors={["rgba(248,250,252,0)", "rgba(248,250,252,1)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              pointerEvents="none"
+              style={{
+                position: "absolute",
+                right: 0,
+                top: 0,
+                bottom: 0,
+                width: 40,
+              }}
+            />
+          )}
+
+          {/* Animated scroll nudge arrow */}
+          {showRightFade && !hasScrolled && (
+            <Animated.View
+              pointerEvents="none"
+              style={{
+                position: "absolute",
+                right: 4,
+                top: 0,
+                bottom: 0,
+                justifyContent: "center",
+                alignItems: "center",
+                opacity: nudgeOpacity,
+                transform: [{ translateX: nudgeTranslateX }],
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: "rgba(30,64,175,0.12)",
+                  borderRadius: 12,
+                  padding: 4,
+                }}
+              >
+                <Ionicons name="chevron-forward" size={16} color="#065F46" />
+              </View>
+            </Animated.View>
+          )}
+        </View>
       </View>
 
       {/* Active Filter Tags */}
@@ -220,11 +348,11 @@ const FilterBar: React.FC<FilterBarProps> = ({
                 className="flex-row items-center bg-primary-muted px-3 py-1.5 rounded-full gap-1.5"
                 onPress={() => onLocationChange(null)}
               >
-                <Ionicons name="location" size={12} color="#1E40AF" />
+                <Ionicons name="location" size={12} color="#065F46" />
                 <Text className="text-xs font-semibold text-primary">
                   {selectedLocation}
                 </Text>
-                <Ionicons name="close" size={12} color="#1E40AF" />
+                <Ionicons name="close" size={12} color="#065F46" />
               </TouchableOpacity>
             )}
             {selectedSort && (
@@ -232,11 +360,11 @@ const FilterBar: React.FC<FilterBarProps> = ({
                 className="flex-row items-center bg-primary-muted px-3 py-1.5 rounded-full gap-1.5"
                 onPress={() => onSortChange(null)}
               >
-                <Ionicons name="swap-vertical" size={12} color="#1E40AF" />
+                <Ionicons name="swap-vertical" size={12} color="#065F46" />
                 <Text className="text-xs font-semibold text-primary">
                   {t(sortLabelKeys[selectedSort])}
                 </Text>
-                <Ionicons name="close" size={12} color="#1E40AF" />
+                <Ionicons name="close" size={12} color="#065F46" />
               </TouchableOpacity>
             )}
             <TouchableOpacity
@@ -279,7 +407,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
           {/* Location Section */}
           <View className="px-4 pb-3">
             <View className="flex-row items-center gap-1.5 mb-2.5">
-              <Ionicons name="location" size={14} color="#1E40AF" />
+              <Ionicons name="location" size={14} color="#065F46" />
               <Text className="text-xs font-semibold text-primary uppercase tracking-wide">
                 {t("filters.city")}
               </Text>
@@ -318,7 +446,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
           {/* Sort Section */}
           <View className="px-4 py-3">
             <View className="flex-row items-center gap-1.5 mb-2.5">
-              <Ionicons name="swap-vertical" size={14} color="#1E40AF" />
+              <Ionicons name="swap-vertical" size={14} color="#065F46" />
               <Text className="text-xs font-semibold text-primary uppercase tracking-wide">
                 {t("filters.sortBy")}
               </Text>

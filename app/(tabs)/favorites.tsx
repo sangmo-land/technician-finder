@@ -3,10 +3,14 @@ import { View, Text, FlatList, RefreshControl, TouchableOpacity } from 'react-na
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
-import { Technician } from '../../src/types';
-import { getFavoriteTechnicians } from '../../src/services/storage';
-import { TechnicianCard, EmptyState, LoadingSpinner } from '../../src/components';
+import { useTranslation } from "react-i18next";
+import { Technician } from "../../src/types";
+import { getFavoriteTechnicians } from "../../src/services/storage";
+import {
+  TechnicianCard,
+  EmptyState,
+  LoadingSpinner,
+} from "../../src/components";
 
 export default function FavoritesScreen() {
   const router = useRouter();
@@ -20,7 +24,7 @@ export default function FavoritesScreen() {
       const data = await getFavoriteTechnicians();
       setFavorites(data);
     } catch (error) {
-      console.error('Error loading favorites:', error);
+      console.error("Error loading favorites:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);

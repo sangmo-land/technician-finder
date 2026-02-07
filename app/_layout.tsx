@@ -1,15 +1,31 @@
 import "../global.css";
 import { useEffect, useState } from "react";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ActivityIndicator, View } from "react-native";
 import { colors } from "../src/constants/colors";
 import { initI18n } from "../src/i18n";
 import { useTranslation } from "react-i18next";
+import { AuthProvider, useAuth } from "../src/contexts/AuthContext";
 
 function RootNavigator() {
   const { t } = useTranslation();
+  const { user, isLoading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inAuthGroup = segments[0] === "sign-in" || segments[0] === "sign-up";
+
+    if (!user && !inAuthGroup) {
+      router.replace("/sign-in");
+    } else if (user && inAuthGroup) {
+      router.replace("/(tabs)");
+    }
+  }, [user, isLoading, segments]);
 
   return (
     <>
@@ -30,6 +46,8 @@ function RootNavigator() {
           },
         }}
       >
+        <Stack.Screen name="sign-in" options={{ headerShown: false }} />
+        <Stack.Screen name="sign-up" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="technician/[id]"
@@ -81,7 +99,9 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <RootNavigator />
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

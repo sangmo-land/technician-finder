@@ -15,9 +15,17 @@ const availabilityConfig: Record<
   string,
   { labelKey: string; color: string; bg: string }
 > = {
-  available: { labelKey: "availability.available", color: "#059669", bg: "#D1FAE5" },
+  available: {
+    labelKey: "availability.available",
+    color: "#059669",
+    bg: "#D1FAE5",
+  },
   busy: { labelKey: "availability.busy", color: "#D97706", bg: "#FEF3C7" },
-  offline: { labelKey: "availability.offline", color: "#94A3B8", bg: "#F1F5F9" },
+  offline: {
+    labelKey: "availability.offline",
+    color: "#94A3B8",
+    bg: "#F1F5F9",
+  },
 };
 
 const TechnicianCard: React.FC<TechnicianCardProps> = ({
@@ -174,7 +182,9 @@ const TechnicianCard: React.FC<TechnicianCardProps> = ({
               <Text className="text-xs font-bold text-primary">
                 {hourlyRate.toLocaleString()}
               </Text>
-              <Text className="text-[10px] text-text-muted">{t("common.xafPerHour")}</Text>
+              <Text className="text-[10px] text-text-muted">
+                {t("common.xafPerHour")}
+              </Text>
             </View>
           </View>
         </View>

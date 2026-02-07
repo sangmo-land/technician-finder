@@ -193,7 +193,10 @@ export default function TabLayout() {
     >
       <Tabs.Screen name="index" options={{ headerShown: false }} />
       <Tabs.Screen name="favorites" options={{ title: t("tabs.favorites") }} />
-      <Tabs.Screen name="admin" options={{ title: t("screens.manageTechnicians") }} />
+      <Tabs.Screen
+        name="admin"
+        options={{ title: t("screens.manageTechnicians") }}
+      />
     </Tabs>
   );
 }

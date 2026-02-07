@@ -15,11 +15,11 @@ export const initializeStorage = async (): Promise<void> => {
     const initialized = await AsyncStorage.getItem(INITIALIZED_KEY);
     if (!initialized) {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(seedTechnicians));
-      await AsyncStorage.setItem(INITIALIZED_KEY, "v2");
-    } else if (initialized === "true") {
-      // Migrate from v1 (old data model without new fields) → re-seed
+      await AsyncStorage.setItem(INITIALIZED_KEY, "v3");
+    } else if (initialized === "true" || initialized === "v2") {
+      // Migrate from older data model → re-seed with gallery field
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(seedTechnicians));
-      await AsyncStorage.setItem(INITIALIZED_KEY, "v2");
+      await AsyncStorage.setItem(INITIALIZED_KEY, "v3");
     }
   } catch (error) {
     console.error("Error initializing storage:", error);
@@ -57,6 +57,7 @@ export const addTechnician = async (
     rating: 0,
     reviewCount: 0,
     jobsCompleted: 0,
+    gallery: data.gallery || [],
   };
 
   try {

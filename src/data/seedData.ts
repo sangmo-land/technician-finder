@@ -1,4 +1,4 @@
-import { Technician } from '../types';
+﻿import { Technician } from '../types';
 
 export const seedTechnicians: Technician[] = [
   {
@@ -14,13 +14,14 @@ export const seedTechnicians: Technician[] = [
     rating: 4.8,
     reviewCount: 124,
     jobsCompleted: 215,
+    gallery: [],
   },
   {
     id: "2",
     name: "Marie-Claire Fotso",
     skill: "Electrician",
     phone: "+237 6 99 87 65 43",
-    location: "Yaoundé",
+    location: "YaoundÃ©",
     experienceYears: 12,
     bio: "Licensed electrician with 12+ years of experience in wiring, panel upgrades, and solar installations. Safety-first approach.",
     hourlyRate: 7500,
@@ -28,6 +29,7 @@ export const seedTechnicians: Technician[] = [
     rating: 4.9,
     reviewCount: 203,
     jobsCompleted: 340,
+    gallery: [],
   },
   {
     id: "3",
@@ -42,10 +44,11 @@ export const seedTechnicians: Technician[] = [
     rating: 4.7,
     reviewCount: 89,
     jobsCompleted: 178,
+    gallery: [],
   },
   {
     id: "4",
-    name: "Cécile Nguemo",
+    name: "CÃ©cile Nguemo",
     skill: "Mason",
     phone: "+237 6 77 88 99 00",
     location: "Bafoussam",
@@ -56,6 +59,7 @@ export const seedTechnicians: Technician[] = [
     rating: 4.6,
     reviewCount: 67,
     jobsCompleted: 142,
+    gallery: [],
   },
   {
     id: "5",
@@ -70,13 +74,14 @@ export const seedTechnicians: Technician[] = [
     rating: 4.4,
     reviewCount: 45,
     jobsCompleted: 98,
+    gallery: [],
   },
   {
     id: "6",
-    name: "Françoise Meka",
+    name: "FranÃ§oise Meka",
     skill: "Plumber",
     phone: "+237 6 11 22 33 44",
-    location: "Yaoundé",
+    location: "YaoundÃ©",
     experienceYears: 9,
     bio: "Dependable plumber for emergency repairs, water heater installations, and kitchen plumbing. Available for urgent calls.",
     hourlyRate: 5500,
@@ -84,6 +89,7 @@ export const seedTechnicians: Technician[] = [
     rating: 4.5,
     reviewCount: 78,
     jobsCompleted: 156,
+    gallery: [],
   },
   {
     id: "7",
@@ -98,6 +104,7 @@ export const seedTechnicians: Technician[] = [
     rating: 4.3,
     reviewCount: 34,
     jobsCompleted: 87,
+    gallery: [],
   },
   {
     id: "8",
@@ -112,6 +119,7 @@ export const seedTechnicians: Technician[] = [
     rating: 4.8,
     reviewCount: 112,
     jobsCompleted: 195,
+    gallery: [],
   },
   {
     id: "9",
@@ -126,6 +134,7 @@ export const seedTechnicians: Technician[] = [
     rating: 4.9,
     reviewCount: 156,
     jobsCompleted: 289,
+    gallery: [],
   },
   {
     id: "10",
@@ -140,13 +149,14 @@ export const seedTechnicians: Technician[] = [
     rating: 4.2,
     reviewCount: 23,
     jobsCompleted: 54,
+    gallery: [],
   },
   {
     id: "11",
     name: "Joseph Kamga",
     skill: "Plumber",
     phone: "+237 6 99 88 77 66",
-    location: "Ngaoundéré",
+    location: "NgaoundÃ©rÃ©",
     experienceYears: 13,
     bio: "Highly experienced plumber handling complex water systems, irrigation, and industrial plumbing projects.",
     hourlyRate: 8000,
@@ -154,10 +164,11 @@ export const seedTechnicians: Technician[] = [
     rating: 4.7,
     reviewCount: 98,
     jobsCompleted: 267,
+    gallery: [],
   },
   {
     id: "12",
-    name: "Angèle Njoya",
+    name: "AngÃ¨le Njoya",
     skill: "Electrician",
     phone: "+237 6 55 66 77 88",
     location: "Maroua",
@@ -168,5 +179,6 @@ export const seedTechnicians: Technician[] = [
     rating: 4.6,
     reviewCount: 56,
     jobsCompleted: 134,
+    gallery: [],
   },
 ];

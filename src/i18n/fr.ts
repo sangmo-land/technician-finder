@@ -195,4 +195,22 @@ export default {
   selectField: {
     selectOption: "Sélectionner une option",
   },
+
+  // Gallery
+  gallery: {
+    title: "Galerie de travaux",
+    formTitle: "Galerie de travaux (Facultatif)",
+    addPhotos: "Ajouter des photos",
+    takePhoto: "Prendre une photo",
+    chooseFromLibrary: "Choisir de la galerie",
+    photoCount: "{{count}} photo(s)",
+    removePhoto: "Supprimer la photo",
+    removePhotoMessage: "Êtes-vous sûr de vouloir supprimer cette photo ?",
+    permissionRequired: "Autorisation requise",
+    cameraPermission: "L'accès à la caméra est nécessaire pour prendre des photos.",
+    libraryPermission: "L'accès à la photothèque est nécessaire pour sélectionner des images.",
+    maxPhotos: "Maximum {{max}} photos autorisées",
+    emptyGallery: "Aucune photo de travaux",
+    viewFullscreen: "Appuyez pour voir",
+  },
 };

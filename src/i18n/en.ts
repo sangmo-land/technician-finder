@@ -195,4 +195,22 @@ export default {
   selectField: {
     selectOption: "Select an option",
   },
+
+  // Gallery
+  gallery: {
+    title: "Work Gallery",
+    formTitle: "Work Gallery (Optional)",
+    addPhotos: "Add Photos",
+    takePhoto: "Take Photo",
+    chooseFromLibrary: "Choose from Library",
+    photoCount: "{{count}} photo(s)",
+    removePhoto: "Remove Photo",
+    removePhotoMessage: "Are you sure you want to remove this photo?",
+    permissionRequired: "Permission Required",
+    cameraPermission: "Camera access is needed to take photos.",
+    libraryPermission: "Photo library access is needed to select images.",
+    maxPhotos: "Maximum {{max}} photos allowed",
+    emptyGallery: "No work photos yet",
+    viewFullscreen: "Tap to view",
+  },
 };

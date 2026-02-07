@@ -17,6 +17,7 @@ export interface Technician {
   rating: number;
   reviewCount: number;
   jobsCompleted: number;
+  gallery: string[]; // local file URIs of work showcase images
 }
 
 export type TechnicianFormData = Omit<

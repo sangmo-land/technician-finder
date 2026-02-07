@@ -20,7 +20,7 @@ import {
   AVAILABILITY_OPTIONS,
 } from "../src/types";
 import { addTechnician } from "../src/services/storage";
-import { InputField, SelectField } from "../src/components";
+import { InputField, SelectField, GalleryPicker } from "../src/components";
 
 interface FormErrors {
   name?: string;
@@ -47,6 +47,7 @@ export default function AddTechnicianScreen() {
   const [availability, setAvailability] = useState<Availability | null>(
     "available",
   );
+  const [gallery, setGallery] = useState<string[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
 
   const validate = (): boolean => {
@@ -111,6 +112,7 @@ export default function AddTechnicianScreen() {
         bio: bio.trim(),
         hourlyRate: parseInt(hourlyRate, 10),
         availability: availability!,
+        gallery,
       };
 
       await addTechnician(formData);
@@ -235,6 +237,14 @@ export default function AddTechnicianScreen() {
             placeholder={t("form.bioPlaceholder")}
             multiline
           />
+        </View>
+
+        {/* Gallery Card */}
+        <View className="bg-surface rounded-2xl p-5 shadow-md mb-3">
+          <Text className="text-xs font-medium text-text-muted uppercase mb-3 tracking-widest">
+            {t("gallery.title")}
+          </Text>
+          <GalleryPicker images={gallery} onChange={setGallery} />
         </View>
 
         {/* Actions */}

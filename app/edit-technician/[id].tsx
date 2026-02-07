@@ -25,7 +25,7 @@ import {
   getTechnicianById,
 } from "../../src/services/storage";
 import { skillColors } from "../../src/constants/colors";
-import { InputField, SelectField, LoadingSpinner } from "../../src/components";
+import { InputField, SelectField, LoadingSpinner, GalleryPicker } from "../../src/components";
 
 interface FormErrors {
   name?: string;
@@ -54,6 +54,7 @@ export default function EditTechnicianScreen() {
   const [bio, setBio] = useState("");
   const [hourlyRate, setHourlyRate] = useState("");
   const [availability, setAvailability] = useState<Availability | null>(null);
+  const [gallery, setGallery] = useState<string[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
@@ -71,6 +72,7 @@ export default function EditTechnicianScreen() {
           setBio(data.bio || "");
           setHourlyRate(data.hourlyRate?.toString() || "");
           setAvailability(data.availability || "available");
+          setGallery(data.gallery || []);
         }
       } catch (error) {
         console.error("Error loading technician:", error);
@@ -144,6 +146,7 @@ export default function EditTechnicianScreen() {
         bio: bio.trim(),
         hourlyRate: parseInt(hourlyRate, 10),
         availability: availability!,
+        gallery,
       };
 
       await updateTechnician(technician.id, formData);
@@ -296,6 +299,14 @@ export default function EditTechnicianScreen() {
             placeholder={t("form.bioPlaceholder")}
             multiline
           />
+        </View>
+
+        {/* Gallery Card */}
+        <View className="bg-surface rounded-2xl p-5 shadow-md mb-3">
+          <Text className="text-xs font-medium text-text-muted uppercase mb-3 tracking-widest">
+            {t("gallery.title")}
+          </Text>
+          <GalleryPicker images={gallery} onChange={setGallery} />
         </View>
 
         {/* Actions */}

@@ -18,7 +18,7 @@ import {
   isFavorite as checkFavorite,
 } from "../../src/services/storage";
 import { skillColors } from "../../src/constants/colors";
-import { LoadingSpinner, EmptyState } from "../../src/components";
+import { LoadingSpinner, EmptyState, GalleryView } from "../../src/components";
 
 const availabilityConfig: Record<
   string,
@@ -254,6 +254,9 @@ export default function TechnicianDetailsScreen() {
             </Text>
           </View>
         ) : null}
+
+        {/* Work Gallery */}
+        <GalleryView images={technician.gallery || []} />
 
         {/* Contact Info */}
         <View className="bg-surface mx-4 mt-3 rounded-2xl p-5 shadow-sm">

@@ -73,25 +73,21 @@ export default function AdminScreen() {
   };
 
   const handleReset = () => {
-    Alert.alert(
-      t("admin.resetTitle"),
-      t("admin.resetMessage"),
-      [
-        { text: t("common.cancel"), style: "cancel" },
-        {
-          text: t("common.reset"),
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await resetToSeedData();
-              loadTechnicians();
-            } catch (error) {
-              Alert.alert(t("common.error"), t("admin.resetFailed"));
-            }
-          },
+    Alert.alert(t("admin.resetTitle"), t("admin.resetMessage"), [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: t("common.reset"),
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await resetToSeedData();
+            loadTechnicians();
+          } catch (error) {
+            Alert.alert(t("common.error"), t("admin.resetFailed"));
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const renderTechnician = ({ item }: { item: Technician }) => {
@@ -130,7 +126,9 @@ export default function AdminScreen() {
             <View className="flex-row items-center gap-1">
               <Ionicons name="star" size={12} color="#F59E0B" />
               <Text className="text-sm text-text-secondary">
-                {(item.rating ?? 0) > 0 ? item.rating.toFixed(1) : t("common.new")}
+                {(item.rating ?? 0) > 0
+                  ? item.rating.toFixed(1)
+                  : t("common.new")}
               </Text>
             </View>
             <Text className="text-sm font-medium text-primary">

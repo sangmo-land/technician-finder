@@ -202,7 +202,10 @@ const FilterBar: React.FC<FilterBarProps> = ({
                   className="w-2 h-2 rounded-full"
                   style={{ backgroundColor: skillColors[selectedSkill] }}
                 />
-                <Text className="text-xs font-semibold" style={{ color: skillColors[selectedSkill] }}>
+                <Text
+                  className="text-xs font-semibold"
+                  style={{ color: skillColors[selectedSkill] }}
+                >
                   {t(`skills.${selectedSkill}`)}
                 </Text>
                 <Ionicons
@@ -241,7 +244,9 @@ const FilterBar: React.FC<FilterBarProps> = ({
               onPress={clearAllFilters}
             >
               <Ionicons name="trash-outline" size={12} color="#DC2626" />
-              <Text className="text-xs font-semibold text-danger">{t("filters.clear")}</Text>
+              <Text className="text-xs font-semibold text-danger">
+                {t("filters.clear")}
+              </Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -264,7 +269,9 @@ const FilterBar: React.FC<FilterBarProps> = ({
                 }}
               >
                 <Ionicons name="refresh" size={14} color="#DC2626" />
-                <Text className="text-xs font-semibold text-danger">{t("common.reset")}</Text>
+                <Text className="text-xs font-semibold text-danger">
+                  {t("common.reset")}
+                </Text>
               </TouchableOpacity>
             )}
           </View>
@@ -354,7 +361,9 @@ const FilterBar: React.FC<FilterBarProps> = ({
             className="mx-4 mb-4 mt-1 py-3 rounded-xl bg-primary items-center"
             onPress={toggleExpanded}
           >
-            <Text className="text-sm font-bold text-white">{t("filters.applyFilters")}</Text>
+            <Text className="text-sm font-bold text-white">
+              {t("filters.applyFilters")}
+            </Text>
           </TouchableOpacity>
         </View>
       )}

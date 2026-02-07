@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, FlatList, RefreshControl, Text, TouchableOpacity } from "react-native";
+import {
+  View,
+  FlatList,
+  RefreshControl,
+  Text,
+  TouchableOpacity,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -183,8 +189,12 @@ export default function HomeScreen() {
       {/* Contextual filter description */}
       {hasActiveFilters && (
         <Text className="text-xs text-text-muted px-4 mb-1">
-          {selectedSkill ? t(`skills.${selectedSkill}`) + "s" : t("home.technicians")}
-          {selectedLocation ? ` ${t("filters.city").toLowerCase()}: ${selectedLocation}` : ""}
+          {selectedSkill
+            ? t(`skills.${selectedSkill}`) + "s"
+            : t("home.technicians")}
+          {selectedLocation
+            ? ` ${t("filters.city").toLowerCase()}: ${selectedLocation}`
+            : ""}
           {searchQuery.trim() ? ` "${searchQuery.trim()}"` : ""}
         </Text>
       )}
@@ -222,7 +232,10 @@ export default function HomeScreen() {
             }}
             activeOpacity={0.7}
           >
-            <Text className="text-sm" style={{ color: "rgba(255,255,255,0.9)" }}>
+            <Text
+              className="text-sm"
+              style={{ color: "rgba(255,255,255,0.9)" }}
+            >
               {supportedLanguages.find((l) => l.code === i18n.language)?.flag}{" "}
               {i18n.language.toUpperCase()}
             </Text>

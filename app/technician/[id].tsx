@@ -36,7 +36,12 @@ const availabilityConfig: Record<
     bg: "#FEF3C7",
     icon: "time",
   },
-  offline: { labelKey: "availability.offline", color: "#94A3B8", bg: "#F1F5F9", icon: "moon" },
+  offline: {
+    labelKey: "availability.offline",
+    color: "#94A3B8",
+    bg: "#F1F5F9",
+    icon: "moon",
+  },
 };
 
 export default function TechnicianDetailsScreen() {
@@ -317,7 +322,9 @@ export default function TechnicianDetailsScreen() {
             <Text
               className={`text-lg font-semibold ${isFav ? "text-danger" : "text-text-secondary"}`}
             >
-              {isFav ? t("detail.removeFromFavorites") : t("detail.addToFavorites")}
+              {isFav
+                ? t("detail.removeFromFavorites")
+                : t("detail.addToFavorites")}
             </Text>
           </TouchableOpacity>
         </View>

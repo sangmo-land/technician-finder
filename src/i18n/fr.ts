@@ -20,6 +20,7 @@ export default {
     home: "Accueil",
     favorites: "Favoris",
     manage: "Gérer",
+    profile: "Profil",
   },
 
   // Screen titles
@@ -221,6 +222,21 @@ export default {
     maxPhotos: "Maximum {{max}} photos autorisées",
     emptyGallery: "Aucune photo de travaux",
     viewFullscreen: "Appuyez pour voir",
+  },
+
+  // Profile
+  profile: {
+    guest: "Invité",
+    account: "Compte",
+    name: "Nom",
+    email: "Email",
+    app: "Application",
+    language: "Langue",
+    currentLanguage: "Français",
+    version: "Version",
+    signOutTitle: "Déconnexion",
+    signOutMessage: "Êtes-vous sûr de vouloir vous déconnecter ?",
+    signOutFailed: "Échec de la déconnexion. Veuillez réessayer.",
   },
 
   // Auth

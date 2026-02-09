@@ -18,10 +18,10 @@ function RootNavigator() {
   useEffect(() => {
     if (isLoading) return;
 
-    const inAuthGroup = segments[0] === "sign-in" || segments[0] === "sign-up";
+    const inAuthGroup = segments[0] === "(auth)";
 
     if (!user && !inAuthGroup) {
-      router.replace("/sign-in");
+      router.replace("/(auth)/sign-in");
     } else if (user && inAuthGroup) {
       router.replace("/(tabs)");
     }
@@ -46,8 +46,7 @@ function RootNavigator() {
           },
         }}
       >
-        <Stack.Screen name="sign-in" options={{ headerShown: false }} />
-        <Stack.Screen name="sign-up" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="technician/[id]"

@@ -1,6 +1,6 @@
 import { Client, Account, ID, Models, OAuthProvider } from "react-native-appwrite";
 import * as WebBrowser from "expo-web-browser";
-import { makeRedirectUri } from "expo-linking";
+import * as Linking from "expo-linking";
 
 const client = new Client()
   .setEndpoint(process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT!)
@@ -13,7 +13,7 @@ const account = new Account(client);
 export async function signUp(
   email: string,
   password: string,
-  name: string
+  name: string,
 ): Promise<Models.User<Models.Preferences>> {
   await account.create(ID.unique(), email, password, name);
   await account.createEmailPasswordSession(email, password);
@@ -22,24 +22,26 @@ export async function signUp(
 
 export async function signIn(
   email: string,
-  password: string
+  password: string,
 ): Promise<Models.User<Models.Preferences>> {
   await account.createEmailPasswordSession(email, password);
   return account.get();
 }
 
-export async function signInWithGoogle(): Promise<Models.User<Models.Preferences>> {
-  const redirectUri = makeRedirectUri({ scheme: "technician-finder" });
+export async function signInWithGoogle(): Promise<
+  Models.User<Models.Preferences>
+> {
+  const redirectUri = Linking.createURL("/");
   const response = account.createOAuth2Token(
     OAuthProvider.Google,
     redirectUri,
-    redirectUri
+    redirectUri,
   );
 
   // Open the OAuth URL in the browser
   const browserResult = await WebBrowser.openAuthSessionAsync(
     (response as any).toString(),
-    redirectUri
+    redirectUri,
   );
 
   if (browserResult.type !== "success" || !browserResult.url) {

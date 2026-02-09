@@ -20,6 +20,7 @@ export default {
     home: "Home",
     favorites: "Favorites",
     manage: "Manage",
+    profile: "Profile",
   },
 
   // Screen titles
@@ -217,6 +218,21 @@ export default {
     maxPhotos: "Maximum {{max}} photos allowed",
     emptyGallery: "No work photos yet",
     viewFullscreen: "Tap to view",
+  },
+
+  // Profile
+  profile: {
+    guest: "Guest",
+    account: "Account",
+    name: "Name",
+    email: "Email",
+    app: "App",
+    language: "Language",
+    currentLanguage: "English",
+    version: "Version",
+    signOutTitle: "Sign Out",
+    signOutMessage: "Are you sure you want to sign out?",
+    signOutFailed: "Failed to sign out. Please try again.",
   },
 
   // Auth

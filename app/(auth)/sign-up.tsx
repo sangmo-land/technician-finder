@@ -16,13 +16,21 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../src/contexts/AuthContext";
+import { useAuth } from "../../src/contexts/AuthContext";
+import { changeLanguage, supportedLanguages } from "../../src/i18n";
 
 export default function SignUpScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { signUp, signInWithGoogle } = useAuth();
+
+  const currentLang = supportedLanguages.find((l) => l.code === i18n.language) || supportedLanguages[0];
+  const nextLang = supportedLanguages.find((l) => l.code !== i18n.language) || supportedLanguages[1];
+
+  const toggleLanguage = () => {
+    changeLanguage(nextLang.code);
+  };
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -85,6 +93,27 @@ export default function SignUpScreen() {
         style={{ paddingTop: insets.top + 30, paddingBottom: 30 }}
         className="px-6 items-center"
       >
+        {/* Language Toggle */}
+        <TouchableOpacity
+          onPress={toggleLanguage}
+          activeOpacity={0.7}
+          style={{
+            position: "absolute",
+            top: insets.top + 10,
+            right: 16,
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: "rgba(255,255,255,0.15)",
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 20,
+          }}
+        >
+          <Text style={{ fontSize: 16, marginRight: 6 }}>{currentLang.flag}</Text>
+          <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "600" }}>
+            {currentLang.code.toUpperCase()}
+          </Text>
+        </TouchableOpacity>
         <View
           className="w-20 h-20 rounded-full items-center justify-center mb-4"
           style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
@@ -250,7 +279,7 @@ export default function SignUpScreen() {
             ) : (
               <>
                 <Image
-                  source={require("../assets/google-logo.png")}
+                  source={require("../../assets/google-logo.png")}
                   style={{ width: 20, height: 20 }}
                   resizeMode="contain"
                 />

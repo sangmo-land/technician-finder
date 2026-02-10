@@ -26,6 +26,9 @@ import {
   createUserProfile,
   getUserProfile,
   uploadGalleryImage,
+  updateTechnician,
+  updateUserProfile,
+  getGalleryImageUrl,
 } from "../../src/services/appwrite";
 import { InputField, SelectField, GalleryPicker } from "../../src/components";
 
@@ -40,6 +43,9 @@ export default function ProfileScreen() {
   const [checkingStatus, setCheckingStatus] = useState(true);
   const [showRegistration, setShowRegistration] = useState(false);
   const [techDocId, setTechDocId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [existingGalleryIds, setExistingGalleryIds] = useState<string[]>([]);
+  const [profileDocId, setProfileDocId] = useState<string | null>(null);
 
   // Registration form state
   const [phone, setPhone] = useState("");
@@ -62,10 +68,14 @@ export default function ProfileScreen() {
     (async () => {
       try {
         setCheckingStatus(true);
-        const tech = await getTechnician(user.$id);
+        const [tech, profile] = await Promise.all([
+          getTechnician(user.$id),
+          getUserProfile(user.$id),
+        ]);
         if (!cancelled) {
           setIsTechnician(!!tech);
           setTechDocId(tech?.$id ?? null);
+          setProfileDocId(profile?.$id ?? null);
         }
       } catch {
         if (!cancelled) setIsTechnician(false);
@@ -122,6 +132,100 @@ export default function ProfileScreen() {
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
+  };
+
+  const handleStartEdit = async () => {
+    if (!user) return;
+    try {
+      const [tech, profile] = await Promise.all([
+        getTechnician(user.$id),
+        getUserProfile(user.$id),
+      ]);
+      if (tech) {
+        setSkills(tech.skills || []);
+        setExperienceYears(String(tech.experienceYears || ""));
+        setHourlyRate(String(tech.hourlyRate || ""));
+        setAvailability(tech.availability || "available");
+        setBio(tech.bio || "");
+        setExistingGalleryIds(tech.gallery || []);
+        // Convert existing gallery file IDs to viewable URLs for GalleryPicker
+        setGalleryImages(
+          (tech.gallery || []).map((id: string) => getGalleryImageUrl(id)),
+        );
+      }
+      if (profile) {
+        setPhone(profile.phone || "");
+        setLocation(profile.location || null);
+        setProfileDocId(profile.$id);
+      }
+      setIsEditing(true);
+      setShowRegistration(true);
+    } catch (error: any) {
+      Alert.alert(
+        t("common.error"),
+        error?.message || "Failed to load profile",
+      );
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!user || !techDocId) return;
+    if (!validateForm()) return;
+
+    setRegistering(true);
+    try {
+      // 1. Update UserProfile if we have the doc ID
+      if (profileDocId) {
+        await updateUserProfile(profileDocId, {
+          phone: phone.trim(),
+          location: location!,
+        });
+      }
+
+      // 2. Figure out new vs existing gallery images
+      const newGalleryFileIds: string[] = [];
+      for (const uri of galleryImages) {
+        // If it's an Appwrite URL, extract the existing file ID
+        const existingMatch = uri.match(/\/files\/([a-zA-Z0-9]+)\/view/);
+        if (existingMatch) {
+          newGalleryFileIds.push(existingMatch[1]);
+        } else {
+          // It's a new local image — upload it
+          const filename = uri.split("/").pop() || `photo_${Date.now()}.jpg`;
+          const ext = filename.split(".").pop()?.toLowerCase() || "jpg";
+          const mimeType = ext === "png" ? "image/png" : "image/jpeg";
+          const fileId = await uploadGalleryImage({
+            name: filename,
+            type: mimeType,
+            size: 0,
+            uri,
+          });
+          newGalleryFileIds.push(fileId);
+        }
+      }
+
+      // 3. Update the technician document
+      await updateTechnician(techDocId, {
+        skills,
+        experienceYears: parseInt(experienceYears, 10),
+        bio: bio.trim(),
+        hourlyRate: parseInt(hourlyRate, 10),
+        availability: availability!,
+        gallery: newGalleryFileIds,
+      });
+
+      setShowRegistration(false);
+      setIsEditing(false);
+
+      Alert.alert(t("profile.updateSuccess"), t("profile.updateSuccessMsg"));
+    } catch (error: any) {
+      Alert.alert(
+        t("common.error"),
+        error?.message || t("profile.updateFailed"),
+      );
+    } finally {
+      setRegistering(false);
+    }
   };
 
   const handleRegister = async () => {
@@ -282,16 +386,29 @@ export default function ProfileScreen() {
               </View>
             </View>
             {techDocId && (
-              <TouchableOpacity
-                className="flex-row items-center justify-center bg-primary-muted rounded-xl py-3 gap-2"
-                onPress={() => router.push(`/technician/${techDocId}`)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="eye-outline" size={18} color="#065F46" />
-                <Text className="text-sm font-semibold text-primary">
-                  {t("profile.viewMyProfile")}
-                </Text>
-              </TouchableOpacity>
+              <View style={{ gap: 10 }}>
+                <TouchableOpacity
+                  className="flex-row items-center justify-center bg-primary-muted rounded-xl py-3 gap-2"
+                  onPress={() => router.push(`/technician/${techDocId}`)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="eye-outline" size={18} color="#065F46" />
+                  <Text className="text-sm font-semibold text-primary">
+                    {t("profile.viewMyProfile")}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="flex-row items-center justify-center rounded-xl py-3 gap-2"
+                  style={{ borderWidth: 1.5, borderColor: "#065F46" }}
+                  onPress={handleStartEdit}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="create-outline" size={18} color="#065F46" />
+                  <Text className="text-sm font-semibold text-primary">
+                    {t("profile.editMyProfile")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             )}
           </View>
         ) : showRegistration ? (
@@ -306,10 +423,14 @@ export default function ProfileScreen() {
                   <Ionicons name="construct" size={26} color="#065F46" />
                 </View>
                 <Text className="text-lg font-semibold text-text">
-                  {t("profile.technicianRegistration")}
+                  {isEditing
+                    ? t("profile.editTechnicianProfile")
+                    : t("profile.technicianRegistration")}
                 </Text>
                 <Text className="text-sm text-text-secondary text-center mt-1">
-                  {t("profile.technicianRegistrationDesc")}
+                  {isEditing
+                    ? t("profile.editTechnicianProfileDesc")
+                    : t("profile.technicianRegistrationDesc")}
                 </Text>
               </View>
 
@@ -412,25 +533,35 @@ export default function ProfileScreen() {
               className={`bg-primary rounded-xl py-4 flex-row items-center justify-center gap-2 shadow-md ${
                 registering ? "opacity-60" : ""
               }`}
-              onPress={handleRegister}
+              onPress={isEditing ? handleUpdate : handleRegister}
               disabled={registering}
               activeOpacity={0.8}
             >
               {registering ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Ionicons name="checkmark-circle" size={22} color="#FFFFFF" />
+                <Ionicons
+                  name={isEditing ? "save" : "checkmark-circle"}
+                  size={22}
+                  color="#FFFFFF"
+                />
               )}
               <Text className="text-base font-medium text-surface">
                 {registering
-                  ? t("profile.registering")
-                  : t("profile.completeRegistration")}
+                  ? t("profile.saving")
+                  : isEditing
+                    ? t("profile.saveChanges")
+                    : t("profile.completeRegistration")}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               className="py-3 items-center mt-1"
-              onPress={() => setShowRegistration(false)}
+              onPress={() => {
+                setShowRegistration(false);
+                setIsEditing(false);
+                setFormErrors({});
+              }}
               activeOpacity={0.7}
             >
               <Text className="text-base font-medium text-text-secondary">

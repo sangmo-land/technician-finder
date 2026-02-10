@@ -267,6 +267,15 @@ export default {
     registrationSuccessMsg:
       "Vous êtes maintenant inscrit en tant que technicien ! Les clients peuvent vous trouver dans l'annuaire.",
     registrationFailed: "Échec de l'inscription. Veuillez réessayer.",
+    editMyProfile: "Modifier mon profil technicien",
+    editTechnicianProfile: "Modifier le profil technicien",
+    editTechnicianProfileDesc:
+      "Mettez à jour vos informations et galerie de travaux",
+    saveChanges: "Enregistrer les modifications",
+    saving: "Enregistrement...",
+    updateSuccess: "Profil mis à jour",
+    updateSuccessMsg: "Votre profil technicien a été mis à jour avec succès.",
+    updateFailed: "Échec de la mise à jour. Veuillez réessayer.",
   },
 
   // Auth

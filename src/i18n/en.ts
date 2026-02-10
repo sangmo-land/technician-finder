@@ -263,6 +263,14 @@ export default {
     registrationSuccessMsg:
       "You are now registered as a technician! Clients can find you in the directory.",
     registrationFailed: "Registration failed. Please try again.",
+    editMyProfile: "Edit My Technician Profile",
+    editTechnicianProfile: "Edit Technician Profile",
+    editTechnicianProfileDesc: "Update your details and work gallery",
+    saveChanges: "Save Changes",
+    saving: "Saving...",
+    updateSuccess: "Profile Updated",
+    updateSuccessMsg: "Your technician profile has been updated successfully.",
+    updateFailed: "Update failed. Please try again.",
   },
 
   // Auth

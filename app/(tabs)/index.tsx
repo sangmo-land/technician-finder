@@ -141,15 +141,24 @@ export default function HomeScreen() {
     loadTechnicians();
   };
 
-  const handleTechnicianPress = (technician: TechnicianWithProfile) => {
-    router.push(`/technician/${technician.$id}`);
-  };
+  const handleTechnicianPress = useCallback(
+    (technician: TechnicianWithProfile) => {
+      router.push({
+        pathname: "/technician/[id]",
+        params: { id: technician.$id, data: JSON.stringify(technician) },
+      });
+    },
+    [router],
+  );
 
-  const renderTechnician = ({ item }: { item: TechnicianWithProfile }) => (
-    <TechnicianCard
-      technician={item}
-      onPress={() => handleTechnicianPress(item)}
-    />
+  const renderTechnician = useCallback(
+    ({ item }: { item: TechnicianWithProfile }) => (
+      <TechnicianCard
+        technician={item}
+        onPress={() => handleTechnicianPress(item)}
+      />
+    ),
+    [handleTechnicianPress],
   );
 
   const renderHeader = () => (
@@ -317,6 +326,10 @@ export default function HomeScreen() {
           ListHeaderComponent={renderHeader}
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
+          removeClippedSubviews
+          maxToRenderPerBatch={8}
+          windowSize={5}
+          initialNumToRender={6}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}

@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,12 +13,68 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../src/contexts/AuthContext";
+import {
+  Skill,
+  Availability,
+  SKILLS,
+  LOCATIONS,
+  AVAILABILITY_OPTIONS,
+} from "../../src/types";
+import {
+  getTechnician,
+  createTechnician,
+  createUserProfile,
+  getUserProfile,
+} from "../../src/services/appwrite";
+import { InputField, SelectField } from "../../src/components";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
+
+  // Technician status
+  const [isTechnician, setIsTechnician] = useState<boolean | null>(null);
+  const [checkingStatus, setCheckingStatus] = useState(true);
+  const [showRegistration, setShowRegistration] = useState(false);
+  const [techDocId, setTechDocId] = useState<string | null>(null);
+
+  // Registration form state
+  const [phone, setPhone] = useState("");
+  const [location, setLocation] = useState<string | null>(null);
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [experienceYears, setExperienceYears] = useState("");
+  const [hourlyRate, setHourlyRate] = useState("");
+  const [availability, setAvailability] = useState<Availability | null>(
+    "available",
+  );
+  const [bio, setBio] = useState("");
+  const [registering, setRegistering] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // Check if user is already a technician
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        setCheckingStatus(true);
+        const tech = await getTechnician(user.$id);
+        if (!cancelled) {
+          setIsTechnician(!!tech);
+          setTechDocId(tech?.$id ?? null);
+        }
+      } catch {
+        if (!cancelled) setIsTechnician(false);
+      } finally {
+        if (!cancelled) setCheckingStatus(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const handleSignOut = () => {
     Alert.alert(t("profile.signOutTitle"), t("profile.signOutMessage"), [
@@ -35,6 +92,83 @@ export default function ProfileScreen() {
         },
       },
     ]);
+  };
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!phone.trim() || phone.trim().length < 8) {
+      errors.phone = t("validation.phoneRequired");
+    }
+    if (!location) {
+      errors.location = t("validation.selectLocation");
+    }
+    if (skills.length === 0) {
+      errors.skills = t("validation.selectSkill");
+    }
+    const years = parseInt(experienceYears, 10);
+    if (!experienceYears.trim() || isNaN(years) || years < 0 || years > 50) {
+      errors.experienceYears = t("validation.experienceRequired");
+    }
+    const rate = parseInt(hourlyRate, 10);
+    if (!hourlyRate.trim() || isNaN(rate) || rate < 500 || rate > 100000) {
+      errors.hourlyRate = t("validation.rateRequired");
+    }
+    if (!availability) {
+      errors.availability = t("validation.selectAvailability");
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleRegister = async () => {
+    if (!user) return;
+    if (!validateForm()) return;
+
+    setRegistering(true);
+    try {
+      // 1. Ensure a UserProfile document exists
+      let profile = await getUserProfile(user.$id);
+      if (!profile) {
+        profile = await createUserProfile({
+          userId: user.$id,
+          name: user.name || "User",
+          phone: phone.trim(),
+          location: location!,
+          role: "technician",
+        });
+      } else {
+        // If profile exists but role is "user", we don't update role here
+        // because updateUserProfile needs the document ID — it already exists
+      }
+
+      // 2. Create the technician document
+      await createTechnician({
+        userId: user.$id,
+        skills,
+        experienceYears: parseInt(experienceYears, 10),
+        bio: bio.trim(),
+        hourlyRate: parseInt(hourlyRate, 10),
+        availability: availability!,
+        gallery: [],
+      });
+
+      setIsTechnician(true);
+      setShowRegistration(false);
+
+      Alert.alert(
+        t("profile.registrationSuccess"),
+        t("profile.registrationSuccessMsg"),
+      );
+    } catch (error: any) {
+      Alert.alert(
+        t("common.error"),
+        error?.message || t("profile.registrationFailed"),
+      );
+    } finally {
+      setRegistering(false);
+    }
   };
 
   const initials = user?.name
@@ -77,12 +211,16 @@ export default function ProfileScreen() {
         className="flex-1"
         contentContainerStyle={{ paddingTop: 24, paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Account Section */}
         <Text className="text-xs font-bold text-text-muted uppercase tracking-wider px-6 mb-3">
           {t("profile.account")}
         </Text>
-        <View className="bg-surface mx-4 rounded-2xl" style={{ borderWidth: 1, borderColor: "#E2E8F0" }}>
+        <View
+          className="bg-surface mx-4 rounded-2xl"
+          style={{ borderWidth: 1, borderColor: "#E2E8F0" }}
+        >
           <ProfileRow
             icon="person-outline"
             label={t("profile.name")}
@@ -96,11 +234,225 @@ export default function ProfileScreen() {
           />
         </View>
 
+        {/* Technician Section */}
+        <Text className="text-xs font-bold text-text-muted uppercase tracking-wider px-6 mb-3 mt-8">
+          {t("profile.technicianSection")}
+        </Text>
+
+        {checkingStatus ? (
+          <View
+            className="bg-surface mx-4 rounded-2xl p-6 items-center"
+            style={{ borderWidth: 1, borderColor: "#E2E8F0" }}
+          >
+            <ActivityIndicator size="small" color="#065F46" />
+          </View>
+        ) : isTechnician && !showRegistration ? (
+          /* Already a technician */
+          <View
+            className="bg-surface mx-4 rounded-2xl p-5"
+            style={{ borderWidth: 1, borderColor: "#E2E8F0" }}
+          >
+            <View className="flex-row items-center gap-3 mb-3">
+              <View className="w-10 h-10 rounded-full bg-green-100 items-center justify-center">
+                <Ionicons name="checkmark-circle" size={22} color="#059669" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-base font-semibold text-text">
+                  {t("profile.alreadyTechnician")}
+                </Text>
+              </View>
+            </View>
+            {techDocId && (
+              <TouchableOpacity
+                className="flex-row items-center justify-center bg-primary-muted rounded-xl py-3 gap-2"
+                onPress={() => router.push(`/technician/${techDocId}`)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="eye-outline" size={18} color="#065F46" />
+                <Text className="text-sm font-semibold text-primary">
+                  {t("profile.viewMyProfile")}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : showRegistration ? (
+          /* Registration Form */
+          <View className="mx-4">
+            <View
+              className="bg-surface rounded-2xl p-5 mb-3"
+              style={{ borderWidth: 1, borderColor: "#E2E8F0" }}
+            >
+              <View className="items-center mb-4">
+                <View className="w-14 h-14 rounded-full bg-primary-muted items-center justify-center mb-3">
+                  <Ionicons name="construct" size={26} color="#065F46" />
+                </View>
+                <Text className="text-lg font-semibold text-text">
+                  {t("profile.technicianRegistration")}
+                </Text>
+                <Text className="text-sm text-text-secondary text-center mt-1">
+                  {t("profile.technicianRegistrationDesc")}
+                </Text>
+              </View>
+
+              {/* Phone */}
+              <InputField
+                label={t("profile.phoneNumber")}
+                value={phone}
+                onChangeText={setPhone}
+                placeholder={t("profile.phonePlaceholder")}
+                keyboardType="phone-pad"
+                error={formErrors.phone}
+              />
+
+              {/* Location */}
+              <SelectField
+                label={t("profile.location")}
+                value={location}
+                options={LOCATIONS}
+                onSelect={setLocation}
+                placeholder={t("profile.selectCity")}
+                error={formErrors.location}
+              />
+
+              {/* Skills */}
+              <SelectField
+                label={t("profile.skillTrade")}
+                value={
+                  skills.length > 0
+                    ? skills.map((s) => t(`skills.${s}`)).join(", ")
+                    : null
+                }
+                options={SKILLS.map((s) => t(`skills.${s}`))}
+                onSelect={(val) => {
+                  const match = SKILLS.find((s) => t(`skills.${s}`) === val);
+                  if (match && !skills.includes(match)) {
+                    setSkills([...skills, match]);
+                  } else if (match && skills.includes(match)) {
+                    setSkills(skills.filter((s) => s !== match));
+                  }
+                }}
+                placeholder={t("profile.selectSkill")}
+                error={formErrors.skills}
+              />
+
+              {/* Experience */}
+              <InputField
+                label={t("profile.yearsOfExperience")}
+                value={experienceYears}
+                onChangeText={setExperienceYears}
+                placeholder={t("profile.yearsPlaceholder")}
+                keyboardType="numeric"
+                error={formErrors.experienceYears}
+              />
+
+              {/* Hourly Rate */}
+              <InputField
+                label={t("profile.hourlyRate")}
+                value={hourlyRate}
+                onChangeText={setHourlyRate}
+                placeholder={t("profile.ratePlaceholder")}
+                keyboardType="numeric"
+                error={formErrors.hourlyRate}
+              />
+
+              {/* Availability */}
+              <SelectField
+                label={t("profile.availability")}
+                value={availability ? t(`availability.${availability}`) : null}
+                options={AVAILABILITY_OPTIONS.map((a) =>
+                  t(`availability.${a}`),
+                )}
+                onSelect={(val) => {
+                  const match = AVAILABILITY_OPTIONS.find(
+                    (a) => t(`availability.${a}`) === val,
+                  );
+                  setAvailability(match || null);
+                }}
+                placeholder={t("profile.selectAvailability")}
+                error={formErrors.availability}
+              />
+
+              {/* Bio */}
+              <InputField
+                label={t("profile.bio")}
+                value={bio}
+                onChangeText={setBio}
+                placeholder={t("profile.bioPlaceholder")}
+                multiline
+              />
+            </View>
+
+            {/* Action buttons */}
+            <TouchableOpacity
+              className={`bg-primary rounded-xl py-4 flex-row items-center justify-center gap-2 shadow-md ${
+                registering ? "opacity-60" : ""
+              }`}
+              onPress={handleRegister}
+              disabled={registering}
+              activeOpacity={0.8}
+            >
+              {registering ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Ionicons name="checkmark-circle" size={22} color="#FFFFFF" />
+              )}
+              <Text className="text-base font-medium text-surface">
+                {registering
+                  ? t("profile.registering")
+                  : t("profile.completeRegistration")}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="py-3 items-center mt-1"
+              onPress={() => setShowRegistration(false)}
+              activeOpacity={0.7}
+            >
+              <Text className="text-base font-medium text-text-secondary">
+                {t("common.cancel")}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          /* Not a technician — CTA to register */
+          <View
+            className="bg-surface mx-4 rounded-2xl p-5"
+            style={{ borderWidth: 1, borderColor: "#E2E8F0" }}
+          >
+            <View className="flex-row items-start gap-3 mb-4">
+              <View className="w-10 h-10 rounded-full bg-amber-50 items-center justify-center mt-0.5">
+                <Ionicons name="construct-outline" size={20} color="#D97706" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-base font-semibold text-text mb-1">
+                  {t("profile.becomeTechnician")}
+                </Text>
+                <Text className="text-sm text-text-secondary leading-5">
+                  {t("profile.becomeTechnicianDesc")}
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              className="flex-row items-center justify-center bg-primary rounded-xl py-3.5 gap-2"
+              onPress={() => setShowRegistration(true)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="arrow-forward-circle" size={20} color="#FFFFFF" />
+              <Text className="text-sm font-semibold text-surface">
+                {t("profile.registerNow")}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* App Section */}
         <Text className="text-xs font-bold text-text-muted uppercase tracking-wider px-6 mb-3 mt-8">
           {t("profile.app")}
         </Text>
-        <View className="bg-surface mx-4 rounded-2xl" style={{ borderWidth: 1, borderColor: "#E2E8F0" }}>
+        <View
+          className="bg-surface mx-4 rounded-2xl"
+          style={{ borderWidth: 1, borderColor: "#E2E8F0" }}
+        >
           <ProfileRow
             icon="language-outline"
             label={t("profile.language")}
@@ -125,7 +477,10 @@ export default function ProfileScreen() {
             style={{ backgroundColor: "#FEE2E2" }}
           >
             <Ionicons name="log-out-outline" size={20} color="#DC2626" />
-            <Text className="text-base font-semibold ml-2" style={{ color: "#DC2626" }}>
+            <Text
+              className="text-base font-semibold ml-2"
+              style={{ color: "#DC2626" }}
+            >
               {t("auth.signOut")}
             </Text>
           </View>

@@ -53,62 +53,102 @@ function SelectField<T extends string>({
         <Text className="text-xs font-medium text-danger mt-1">{error}</Text>
       )}
 
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <TouchableOpacity
-          className="flex-1 justify-end"
-          style={{ backgroundColor: "rgba(15, 23, 42, 0.6)" }}
-          activeOpacity={1}
-          onPress={() => setModalVisible(false)}
+      {modalVisible && (
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          onRequestClose={() => setModalVisible(false)}
         >
-          <View className="bg-surface rounded-t-2xl max-h-[70%] shadow-xl">
-            <View className="flex-row justify-between items-center p-5 border-b border-border-light">
-              <Text className="text-xl font-semibold text-text">{label}</Text>
-              <TouchableOpacity
-                className="w-10 h-10 rounded-full bg-background items-center justify-center"
-                onPress={() => setModalVisible(false)}
-              >
-                <Ionicons name="close" size={24} color="#475569" />
-              </TouchableOpacity>
-            </View>
-            <ScrollView
-              className="px-4 py-3"
-              showsVerticalScrollIndicator={false}
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              justifyContent: "flex-end",
+              backgroundColor: "rgba(15, 23, 42, 0.6)",
+            }}
+            activeOpacity={1}
+            onPress={() => setModalVisible(false)}
+          >
+            <View
+              style={{
+                backgroundColor: "#FFFFFF",
+                borderTopLeftRadius: 16,
+                borderTopRightRadius: 16,
+                maxHeight: "70%",
+              }}
             >
-              {options.map((option) => (
-                <TouchableOpacity
-                  key={option}
-                  className={`flex-row items-center justify-between py-4 px-3 rounded-xl mb-1 ${
-                    value === option ? "bg-primary-muted" : ""
-                  }`}
-                  onPress={() => handleSelect(option)}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: 20,
+                  borderBottomWidth: 1,
+                  borderBottomColor: "#F1F5F9",
+                }}
+              >
+                <Text
+                  style={{ fontSize: 20, fontWeight: "600", color: "#0F172A" }}
                 >
-                  <Text
-                    className={`text-base ${
-                      value === option
-                        ? "font-medium text-primary"
-                        : "text-text"
-                    }`}
-                  >
-                    {option}
-                  </Text>
-                  {value === option && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={22}
-                      color="#1E40AF"
-                    />
-                  )}
+                  {label}
+                </Text>
+                <TouchableOpacity
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: "#F8FAFC",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Ionicons name="close" size={24} color="#475569" />
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+              </View>
+              <ScrollView
+                style={{ paddingHorizontal: 16, paddingVertical: 12 }}
+                showsVerticalScrollIndicator={false}
+              >
+                {options.map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      paddingVertical: 16,
+                      paddingHorizontal: 12,
+                      borderRadius: 12,
+                      marginBottom: 4,
+                      backgroundColor:
+                        value === option ? "#D1FAE5" : "transparent",
+                    }}
+                    onPress={() => handleSelect(option)}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: value === option ? "500" : "400",
+                        color: value === option ? "#065F46" : "#0F172A",
+                      }}
+                    >
+                      {option}
+                    </Text>
+                    {value === option && (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={22}
+                        color="#065F46"
+                      />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
     </View>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -50,29 +50,32 @@ export default function AdminScreen() {
     loadTechnicians();
   };
 
-  const handleDelete = (technician: TechnicianWithProfile) => {
-    Alert.alert(
-      t("admin.deleteTitle"),
-      t("admin.deleteMessage", { name: technician.name }),
-      [
-        { text: t("common.cancel"), style: "cancel" },
-        {
-          text: t("common.delete"),
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteTechnician(technician.$id);
-              loadTechnicians();
-            } catch (error) {
-              Alert.alert(t("common.error"), t("admin.deleteFailed"));
-            }
+  const handleDelete = useCallback(
+    (technician: TechnicianWithProfile) => {
+      Alert.alert(
+        t("admin.deleteTitle"),
+        t("admin.deleteMessage", { name: technician.name }),
+        [
+          { text: t("common.cancel"), style: "cancel" },
+          {
+            text: t("common.delete"),
+            style: "destructive",
+            onPress: async () => {
+              try {
+                await deleteTechnician(technician.$id);
+                loadTechnicians();
+              } catch (error) {
+                Alert.alert(t("common.error"), t("admin.deleteFailed"));
+              }
+            },
           },
-        },
-      ],
-    );
-  };
+        ],
+      );
+    },
+    [t, loadTechnicians],
+  );
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     Alert.alert(t("admin.resetTitle"), t("admin.resetMessage"), [
       { text: t("common.cancel"), style: "cancel" },
       {
@@ -88,72 +91,76 @@ export default function AdminScreen() {
         },
       },
     ]);
-  };
+  }, [t, loadTechnicians]);
 
-  const renderTechnician = ({ item }: { item: TechnicianWithProfile }) => {
-    const color = skillColors[item.skills[0]];
+  const renderTechnician = useCallback(
+    ({ item }: { item: TechnicianWithProfile }) => {
+      const color = skillColors[item.skills[0]];
 
-    return (
-      <View className="bg-surface mx-4 mb-3 rounded-xl p-4 flex-row items-center shadow-sm">
-        <View className="flex-1">
-          <View className="flex-row items-center mb-2">
-            <View
-              className="w-2 h-2 rounded-full mr-2"
-              style={{ backgroundColor: color }}
-            />
-            <Text
-              className="text-base font-medium text-text flex-1"
-              numberOfLines={1}
-            >
-              {item.name}
-            </Text>
+      return (
+        <View className="bg-surface mx-4 mb-3 rounded-xl p-4 flex-row items-center shadow-sm">
+          <View className="flex-1">
+            <View className="flex-row items-center mb-2">
+              <View
+                className="w-2 h-2 rounded-full mr-2"
+                style={{ backgroundColor: color }}
+              />
+              <Text
+                className="text-base font-medium text-text flex-1"
+                numberOfLines={1}
+              >
+                {item.name}
+              </Text>
+            </View>
+            <View className="flex-row items-center gap-3 flex-wrap">
+              <View
+                className="px-2 py-1 rounded-md"
+                style={{ backgroundColor: `${color}15` }}
+              >
+                <Text className="text-xs font-semibold" style={{ color }}>
+                  {item.skills.map((s) => t(`skills.${s}`)).join(", ")}
+                </Text>
+              </View>
+              <View className="flex-row items-center gap-1">
+                <Ionicons name="location-outline" size={12} color="#94A3B8" />
+                <Text className="text-sm text-text-secondary">
+                  {item.location}
+                </Text>
+              </View>
+              <View className="flex-row items-center gap-1">
+                <Ionicons name="star" size={12} color="#F59E0B" />
+                <Text className="text-sm text-text-secondary">
+                  {(item.rating ?? 0) > 0
+                    ? item.rating.toFixed(1)
+                    : t("common.new")}
+                </Text>
+              </View>
+              <Text className="text-sm font-medium text-primary">
+                {(item.hourlyRate ?? 0).toLocaleString()}{" "}
+                {t("common.xafPerHour")}
+              </Text>
+            </View>
           </View>
-          <View className="flex-row items-center gap-3 flex-wrap">
-            <View
-              className="px-2 py-1 rounded-md"
-              style={{ backgroundColor: `${color}15` }}
+
+          <View className="flex-row gap-2 ml-3">
+            <TouchableOpacity
+              className="w-10 h-10 rounded-lg bg-primary-muted items-center justify-center"
+              onPress={() => router.push(`/edit-technician/${item.$id}`)}
             >
-              <Text className="text-xs font-semibold" style={{ color }}>
-                {item.skills.map((s) => t(`skills.${s}`)).join(", ")}
-              </Text>
-            </View>
-            <View className="flex-row items-center gap-1">
-              <Ionicons name="location-outline" size={12} color="#94A3B8" />
-              <Text className="text-sm text-text-secondary">
-                {item.location}
-              </Text>
-            </View>
-            <View className="flex-row items-center gap-1">
-              <Ionicons name="star" size={12} color="#F59E0B" />
-              <Text className="text-sm text-text-secondary">
-                {(item.rating ?? 0) > 0
-                  ? item.rating.toFixed(1)
-                  : t("common.new")}
-              </Text>
-            </View>
-            <Text className="text-sm font-medium text-primary">
-              {(item.hourlyRate ?? 0).toLocaleString()} {t("common.xafPerHour")}
-            </Text>
+              <Ionicons name="pencil" size={18} color="#065F46" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="w-10 h-10 rounded-lg bg-danger-light items-center justify-center"
+              onPress={() => handleDelete(item)}
+            >
+              <Ionicons name="trash-outline" size={18} color="#DC2626" />
+            </TouchableOpacity>
           </View>
         </View>
-
-        <View className="flex-row gap-2 ml-3">
-          <TouchableOpacity
-            className="w-10 h-10 rounded-lg bg-primary-muted items-center justify-center"
-            onPress={() => router.push(`/edit-technician/${item.$id}`)}
-          >
-            <Ionicons name="pencil" size={18} color="#065F46" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="w-10 h-10 rounded-lg bg-danger-light items-center justify-center"
-            onPress={() => handleDelete(item)}
-          >
-            <Ionicons name="trash-outline" size={18} color="#DC2626" />
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  };
+      );
+    },
+    [router, t, handleDelete],
+  );
 
   const renderHeader = () => (
     <View className="p-4 gap-3">
@@ -217,6 +224,10 @@ export default function AdminScreen() {
           ListHeaderComponent={renderHeader}
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
+          removeClippedSubviews
+          maxToRenderPerBatch={8}
+          windowSize={5}
+          initialNumToRender={6}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}

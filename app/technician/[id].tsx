@@ -45,24 +45,43 @@ const availabilityConfig: Record<
 };
 
 export default function TechnicianDetailsScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, data: dataParam } = useLocalSearchParams<{
+    id: string;
+    data?: string;
+  }>();
   const { t } = useTranslation();
+
+  // Try to hydrate from route params first (instant) → fall back to API
+  const initialData = React.useMemo(() => {
+    if (!dataParam) return null;
+    try {
+      return JSON.parse(dataParam) as TechnicianWithProfile;
+    } catch {
+      return null;
+    }
+  }, [dataParam]);
+
   const [technician, setTechnician] = useState<TechnicianWithProfile | null>(
-    null,
+    initialData,
   );
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialData);
   const [isFav, setIsFav] = useState(false);
 
   useEffect(() => {
+    if (!id) return;
+    // Always check favorite status
+    checkFavorite(id)
+      .then(setIsFav)
+      .catch(() => {});
+    // Only fetch from API if we don't have data from params
+    if (initialData) {
+      setLoading(false);
+      return;
+    }
     const load = async () => {
-      if (!id) return;
       try {
-        const [data, favStatus] = await Promise.all([
-          getTechnicianById(id),
-          checkFavorite(id),
-        ]);
+        const data = await getTechnicianById(id);
         setTechnician(data);
-        setIsFav(favStatus);
       } catch (error) {
         console.error("Error loading technician:", error);
       } finally {
@@ -70,7 +89,7 @@ export default function TechnicianDetailsScreen() {
       }
     };
     load();
-  }, [id]);
+  }, [id, initialData]);
 
   const handleToggleFavorite = async () => {
     if (!id) return;

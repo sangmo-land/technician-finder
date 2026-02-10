@@ -42,11 +42,19 @@ export default function FavoritesScreen() {
     loadFavorites();
   };
 
-  const renderTechnician = ({ item }: { item: TechnicianWithProfile }) => (
-    <TechnicianCard
-      technician={item}
-      onPress={() => router.push(`/technician/${item.$id}`)}
-    />
+  const renderTechnician = useCallback(
+    ({ item }: { item: TechnicianWithProfile }) => (
+      <TechnicianCard
+        technician={item}
+        onPress={() =>
+          router.push({
+            pathname: "/technician/[id]",
+            params: { id: item.$id, data: JSON.stringify(item) },
+          })
+        }
+      />
+    ),
+    [router],
   );
 
   const renderHeader = () => (
@@ -94,6 +102,10 @@ export default function FavoritesScreen() {
           ListHeaderComponent={renderHeader}
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
+          removeClippedSubviews
+          maxToRenderPerBatch={8}
+          windowSize={5}
+          initialNumToRender={6}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}

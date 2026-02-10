@@ -24,7 +24,7 @@ import { InputField, SelectField, GalleryPicker } from "../src/components";
 
 interface FormErrors {
   name?: string;
-  skill?: string;
+  skills?: string;
   phone?: string;
   location?: string;
   experienceYears?: string;
@@ -38,7 +38,7 @@ export default function AddTechnicianScreen() {
   const [loading, setLoading] = useState(false);
 
   const [name, setName] = useState("");
-  const [skill, setSkill] = useState<Skill | null>(null);
+  const [skills, setSkills] = useState<Skill[]>([]);
   const [phone, setPhone] = useState("");
   const [location, setLocation] = useState<string | null>(null);
   const [experienceYears, setExperienceYears] = useState("");
@@ -59,8 +59,8 @@ export default function AddTechnicianScreen() {
       newErrors.name = t("validation.nameMinLength");
     }
 
-    if (!skill) {
-      newErrors.skill = t("validation.selectSkill");
+    if (skills.length === 0) {
+      newErrors.skills = t("validation.selectSkill");
     }
 
     if (!phone.trim()) {
@@ -104,10 +104,8 @@ export default function AddTechnicianScreen() {
 
     try {
       const formData: TechnicianFormData = {
-        name: name.trim(),
-        skill: skill!,
-        phone: phone.trim(),
-        location: location!,
+        userId: "",
+        skills: skills,
         experienceYears: parseInt(experienceYears, 10),
         bio: bio.trim(),
         hourlyRate: parseInt(hourlyRate, 10),
@@ -163,14 +161,22 @@ export default function AddTechnicianScreen() {
 
           <SelectField
             label={t("form.skillTrade")}
-            value={skill ? t(`skills.${skill}`) : null}
+            value={
+              skills.length > 0
+                ? skills.map((s) => t(`skills.${s}`)).join(", ")
+                : null
+            }
             options={SKILLS.map((s) => t(`skills.${s}`))}
             onSelect={(val) => {
               const match = SKILLS.find((s) => t(`skills.${s}`) === val);
-              setSkill(match || null);
+              if (match && !skills.includes(match)) {
+                setSkills([...skills, match]);
+              } else if (match && skills.includes(match)) {
+                setSkills(skills.filter((s) => s !== match));
+              }
             }}
             placeholder={t("form.selectSkill")}
-            error={errors.skill}
+            error={errors.skills}
           />
 
           <InputField

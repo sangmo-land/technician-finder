@@ -1,40 +1,66 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Technician, TechnicianFormData } from '../types';
-import { seedTechnicians } from '../data/seedData';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { TechnicianWithProfile, TechnicianFormData, Skill } from "../types";
+import {
+  listTechnicians as appwriteListTechnicians,
+  getTechnicianById as appwriteGetTechnicianById,
+  createTechnician as appwriteCreateTechnician,
+  updateTechnician as appwriteUpdateTechnician,
+  deleteTechnician as appwriteDeleteTechnician,
+  createUserProfile,
+  getUserProfile,
+  getGalleryImageUrl,
+  Query,
+  databases,
+} from "./appwrite";
 
-const STORAGE_KEY = '@technicians';
-const INITIALIZED_KEY = '@initialized';
 const FAVORITES_KEY = "@favorites";
 
-const generateId = (): string => {
-  return Date.now().toString(36) + Math.random().toString(36).substring(2);
-};
+const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
+const USERS_COLLECTION_ID =
+  process.env.EXPO_PUBLIC_APPWRITE_USERS_COLLECTION_ID!;
 
-export const initializeStorage = async (): Promise<void> => {
-  try {
-    const initialized = await AsyncStorage.getItem(INITIALIZED_KEY);
-    if (!initialized) {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(seedTechnicians));
-      await AsyncStorage.setItem(INITIALIZED_KEY, "v5");
-    } else if (
-      initialized === "true" ||
-      initialized === "v2" ||
-      initialized === "v3" ||
-      initialized === "v4"
-    ) {
-      // Migrate from older data model → re-seed with reliable image URLs
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(seedTechnicians));
-      await AsyncStorage.setItem(INITIALIZED_KEY, "v5");
-    }
-  } catch (error) {
-    console.error("Error initializing storage:", error);
-  }
-};
+// ── Helpers ──
 
-export const getAllTechnicians = async (): Promise<Technician[]> => {
+/** Resolve gallery file IDs → viewable URLs */
+function resolveGallery(fileIds: string[]): string[] {
+  if (!fileIds || fileIds.length === 0) return [];
+  return fileIds.map((id) => getGalleryImageUrl(id));
+}
+
+/** Join a technician doc with its user profile */
+async function joinWithProfile(
+  tech: any,
+): Promise<TechnicianWithProfile> {
+  const profile = await getUserProfile(tech.userId);
+  return {
+    $id: tech.$id,
+    userId: tech.userId,
+    name: profile?.name ?? "Unknown",
+    phone: profile?.phone ?? "",
+    location: profile?.location ?? "",
+    skills: tech.skills ?? [],
+    experienceYears: tech.experienceYears ?? 0,
+    bio: tech.bio ?? "",
+    hourlyRate: tech.hourlyRate ?? 0,
+    availability: tech.availability ?? "offline",
+    rating: tech.rating ?? 0,
+    reviewCount: tech.reviewCount ?? 0,
+    jobsCompleted: tech.jobsCompleted ?? 0,
+    gallery: resolveGallery(tech.gallery ?? []),
+  };
+}
+
+// ── No-op (kept for backward compat — data now lives in Appwrite) ──
+export const initializeStorage = async (): Promise<void> => {};
+
+// ── Read ──
+
+export const getAllTechnicians = async (): Promise<TechnicianWithProfile[]> => {
   try {
-    const data = await AsyncStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+    const techs = await appwriteListTechnicians([Query.limit(100)]);
+    // Fetch all user profiles in parallel
+    const results = await Promise.all(techs.map(joinWithProfile));
+    return results;
   } catch (error) {
     console.error("Error getting technicians:", error);
     return [];
@@ -43,92 +69,58 @@ export const getAllTechnicians = async (): Promise<Technician[]> => {
 
 export const getTechnicianById = async (
   id: string,
-): Promise<Technician | null> => {
+): Promise<TechnicianWithProfile | null> => {
   try {
-    const technicians = await getAllTechnicians();
-    return technicians.find((t) => t.id === id) || null;
+    const tech = await appwriteGetTechnicianById(id);
+    return joinWithProfile(tech);
   } catch (error) {
     console.error("Error getting technician:", error);
     return null;
   }
 };
 
+// ── Write ──
+
 export const addTechnician = async (
   data: TechnicianFormData,
-): Promise<Technician> => {
-  const newTechnician: Technician = {
+): Promise<TechnicianWithProfile> => {
+  const tech = await appwriteCreateTechnician({
     ...data,
-    id: generateId(),
-    rating: 0,
-    reviewCount: 0,
-    jobsCompleted: 0,
     gallery: data.gallery || [],
-  };
-
-  try {
-    const technicians = await getAllTechnicians();
-    technicians.push(newTechnician);
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(technicians));
-    return newTechnician;
-  } catch (error) {
-    console.error("Error adding technician:", error);
-    throw error;
-  }
+  });
+  return joinWithProfile(tech);
 };
 
 export const updateTechnician = async (
   id: string,
-  data: TechnicianFormData,
-): Promise<Technician | null> => {
+  data: Partial<TechnicianFormData>,
+): Promise<TechnicianWithProfile | null> => {
   try {
-    const technicians = await getAllTechnicians();
-    const index = technicians.findIndex((t) => t.id === id);
-
-    if (index === -1) {
-      return null;
-    }
-
-    const updatedTechnician: Technician = {
-      ...technicians[index],
-      ...data,
-      id,
-    };
-    technicians[index] = updatedTechnician;
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(technicians));
-    return updatedTechnician;
+    const tech = await appwriteUpdateTechnician(id, data);
+    return joinWithProfile(tech);
   } catch (error) {
     console.error("Error updating technician:", error);
-    throw error;
+    return null;
   }
 };
 
 export const deleteTechnician = async (id: string): Promise<boolean> => {
   try {
-    const technicians = await getAllTechnicians();
-    const filtered = technicians.filter((t) => t.id !== id);
-
-    if (filtered.length === technicians.length) {
-      return false;
-    }
-
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+    await appwriteDeleteTechnician(id);
     return true;
   } catch (error) {
     console.error("Error deleting technician:", error);
-    throw error;
+    return false;
   }
 };
 
 export const resetToSeedData = async (): Promise<void> => {
-  try {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(seedTechnicians));
-  } catch (error) {
-    console.error("Error resetting data:", error);
-    throw error;
-  }
+  // In the Appwrite world this is a no-op.
+  // Use the seed scripts to re-populate if needed.
+  console.warn("resetToSeedData is not supported with Appwrite backend");
 };
 
-// ── Favorites ──
+// ── Favorites (still local via AsyncStorage) ──
 
 export const getFavorites = async (): Promise<string[]> => {
   try {
@@ -174,13 +166,15 @@ export const isFavorite = async (technicianId: string): Promise<boolean> => {
   }
 };
 
-export const getFavoriteTechnicians = async (): Promise<Technician[]> => {
+export const getFavoriteTechnicians = async (): Promise<
+  TechnicianWithProfile[]
+> => {
   try {
     const [technicians, favoriteIds] = await Promise.all([
       getAllTechnicians(),
       getFavorites(),
     ]);
-    return technicians.filter((t) => favoriteIds.includes(t.id));
+    return technicians.filter((t) => favoriteIds.includes(t.$id));
   } catch (error) {
     console.error("Error getting favorite technicians:", error);
     return [];

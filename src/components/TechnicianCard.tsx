@@ -2,11 +2,11 @@ import React from "react";
 import { View, Text, TouchableOpacity, Platform, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { Technician } from "../types";
+import { TechnicianWithProfile } from "../types";
 import { skillColors } from "../constants/colors";
 
 interface TechnicianCardProps {
-  technician: Technician;
+  technician: TechnicianWithProfile;
   onPress: () => void;
   variant?: "default" | "featured";
 }
@@ -41,13 +41,13 @@ const TechnicianCard: React.FC<TechnicianCardProps> = ({
   variant = "default",
 }) => {
   const { t } = useTranslation();
-  const skillColor = skillColors[technician.skill];
+  const skillColor = skillColors[technician.skills[0]] || "#6B7280";
   const avail =
     availabilityConfig[technician.availability] || availabilityConfig.offline;
   const isFeatured = variant === "featured";
   const rating = technician.rating ?? 0;
   const reviewCount = technician.reviewCount ?? 0;
-  const skillIcon = skillIcons[technician.skill] || "build";
+  const skillIcon = skillIcons[technician.skills[0]] || "build";
 
   const gallery = technician.gallery ?? [];
   const coverImage = gallery.length > 0 ? gallery[0] : null;
@@ -200,7 +200,7 @@ const TechnicianCard: React.FC<TechnicianCardProps> = ({
                   className="text-xs font-semibold"
                   style={{ color: skillColor }}
                 >
-                  {t(`skills.${technician.skill}`)}
+                  {technician.skills.map((s) => s).join(", ")}
                 </Text>
               </View>
               <View className="w-[3px] h-[3px] rounded-full bg-border" />

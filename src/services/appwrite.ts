@@ -1,12 +1,37 @@
-import { Client, Account, ID, Models, OAuthProvider } from "react-native-appwrite";
+import {
+  Client,
+  Account,
+  Databases,
+  Storage,
+  ID,
+  Query,
+  Models,
+  OAuthProvider,
+} from "react-native-appwrite";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
+import {
+  UserProfile,
+  UserProfileFormData,
+  Technician,
+  TechnicianFormData,
+} from "../types";
 
 const client = new Client()
   .setEndpoint(process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT!)
   .setProject(process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!);
 
 const account = new Account(client);
+const databases = new Databases(client);
+const storage = new Storage(client);
+
+// ── Constants ──
+const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
+const USERS_COLLECTION_ID =
+  process.env.EXPO_PUBLIC_APPWRITE_USERS_COLLECTION_ID!;
+const TECHNICIANS_COLLECTION_ID =
+  process.env.EXPO_PUBLIC_APPWRITE_TECHNICIANS_COLLECTION_ID!;
+const GALLERY_BUCKET_ID = process.env.EXPO_PUBLIC_APPWRITE_GALLERY_BUCKET_ID!;
 
 // ── Auth helpers ──
 
@@ -74,4 +99,137 @@ export async function getCurrentUser(): Promise<Models.User<Models.Preferences> 
   }
 }
 
-export { client, account };
+// ── User Profile helpers ──
+
+export async function createUserProfile(
+  data: UserProfileFormData,
+): Promise<UserProfile> {
+  return (await databases.createDocument(
+    DATABASE_ID,
+    USERS_COLLECTION_ID,
+    ID.unique(),
+    data,
+  )) as unknown as UserProfile;
+}
+
+export async function getUserProfile(
+  userId: string,
+): Promise<UserProfile | null> {
+  try {
+    const res = await databases.listDocuments(
+      DATABASE_ID,
+      USERS_COLLECTION_ID,
+      [Query.equal("userId", userId), Query.limit(1)],
+    );
+    return (res.documents[0] as unknown as UserProfile) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateUserProfile(
+  documentId: string,
+  data: Partial<UserProfileFormData>,
+): Promise<UserProfile> {
+  return (await databases.updateDocument(
+    DATABASE_ID,
+    USERS_COLLECTION_ID,
+    documentId,
+    data,
+  )) as unknown as UserProfile;
+}
+
+// ── Technician helpers ──
+
+export async function createTechnician(
+  data: TechnicianFormData,
+): Promise<Technician> {
+  return (await databases.createDocument(
+    DATABASE_ID,
+    TECHNICIANS_COLLECTION_ID,
+    ID.unique(),
+    data,
+  )) as unknown as Technician;
+}
+
+export async function getTechnician(
+  userId: string,
+): Promise<Technician | null> {
+  try {
+    const res = await databases.listDocuments(
+      DATABASE_ID,
+      TECHNICIANS_COLLECTION_ID,
+      [Query.equal("userId", userId), Query.limit(1)],
+    );
+    return (res.documents[0] as unknown as Technician) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getTechnicianById(
+  documentId: string,
+): Promise<Technician> {
+  return (await databases.getDocument(
+    DATABASE_ID,
+    TECHNICIANS_COLLECTION_ID,
+    documentId,
+  )) as unknown as Technician;
+}
+
+export async function listTechnicians(
+  queries: string[] = [],
+): Promise<Technician[]> {
+  const res = await databases.listDocuments(
+    DATABASE_ID,
+    TECHNICIANS_COLLECTION_ID,
+    queries,
+  );
+  return res.documents as unknown as Technician[];
+}
+
+export async function updateTechnician(
+  documentId: string,
+  data: Partial<TechnicianFormData>,
+): Promise<Technician> {
+  return (await databases.updateDocument(
+    DATABASE_ID,
+    TECHNICIANS_COLLECTION_ID,
+    documentId,
+    data,
+  )) as unknown as Technician;
+}
+
+export async function deleteTechnician(documentId: string): Promise<void> {
+  await databases.deleteDocument(
+    DATABASE_ID,
+    TECHNICIANS_COLLECTION_ID,
+    documentId,
+  );
+}
+
+// ── Gallery / Storage helpers ──
+
+export async function uploadGalleryImage(file: {
+  name: string;
+  type: string;
+  size: number;
+  uri: string;
+}): Promise<string> {
+  const uploaded = await storage.createFile(
+    GALLERY_BUCKET_ID,
+    ID.unique(),
+    file,
+  );
+  return uploaded.$id;
+}
+
+export function getGalleryImageUrl(fileId: string): string {
+  return `${process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${GALLERY_BUCKET_ID}/files/${fileId}/view?project=${process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID}`;
+}
+
+export async function deleteGalleryImage(fileId: string): Promise<void> {
+  await storage.deleteFile(GALLERY_BUCKET_ID, fileId);
+}
+
+export { client, account, databases, storage, Query };

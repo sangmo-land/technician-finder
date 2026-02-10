@@ -11,7 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { Technician } from "../../src/types";
+import { TechnicianWithProfile } from "../../src/types";
 import {
   getTechnicianById,
   toggleFavorite,
@@ -47,7 +47,9 @@ const availabilityConfig: Record<
 export default function TechnicianDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
-  const [technician, setTechnician] = useState<Technician | null>(null);
+  const [technician, setTechnician] = useState<TechnicianWithProfile | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [isFav, setIsFav] = useState(false);
 
@@ -111,7 +113,7 @@ export default function TechnicianDetailsScreen() {
     );
   }
 
-  const color = skillColors[technician.skill];
+  const color = skillColors[technician.skills[0]];
   const avail =
     availabilityConfig[technician.availability] || availabilityConfig.offline;
 
@@ -174,7 +176,7 @@ export default function TechnicianDetailsScreen() {
                 style={{ backgroundColor: color }}
               />
               <Text className="text-sm font-semibold" style={{ color }}>
-                {t(`skills.${technician.skill}`)}
+                {technician.skills.map((s) => t(`skills.${s}`)).join(", ")}
               </Text>
             </View>
             <View

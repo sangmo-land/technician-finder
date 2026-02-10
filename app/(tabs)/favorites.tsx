@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from "react-i18next";
-import { Technician } from "../../src/types";
+import { TechnicianWithProfile } from "../../src/types";
 import { getFavoriteTechnicians } from "../../src/services/storage";
 import {
   TechnicianCard,
@@ -15,7 +15,7 @@ import {
 export default function FavoritesScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [favorites, setFavorites] = useState<Technician[]>([]);
+  const [favorites, setFavorites] = useState<TechnicianWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -42,10 +42,10 @@ export default function FavoritesScreen() {
     loadFavorites();
   };
 
-  const renderTechnician = ({ item }: { item: Technician }) => (
+  const renderTechnician = ({ item }: { item: TechnicianWithProfile }) => (
     <TechnicianCard
       technician={item}
-      onPress={() => router.push(`/technician/${item.id}`)}
+      onPress={() => router.push(`/technician/${item.$id}`)}
     />
   );
 
@@ -90,7 +90,7 @@ export default function FavoritesScreen() {
         <FlatList
           data={favorites}
           renderItem={renderTechnician}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.$id}
           ListHeaderComponent={renderHeader}
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}

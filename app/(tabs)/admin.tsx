@@ -11,7 +11,7 @@ import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { Technician } from "../../src/types";
+import { TechnicianWithProfile } from "../../src/types";
 import {
   getAllTechnicians,
   deleteTechnician,
@@ -23,7 +23,7 @@ import { EmptyState, LoadingSpinner } from "../../src/components";
 export default function AdminScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [technicians, setTechnicians] = useState<TechnicianWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -50,7 +50,7 @@ export default function AdminScreen() {
     loadTechnicians();
   };
 
-  const handleDelete = (technician: Technician) => {
+  const handleDelete = (technician: TechnicianWithProfile) => {
     Alert.alert(
       t("admin.deleteTitle"),
       t("admin.deleteMessage", { name: technician.name }),
@@ -61,7 +61,7 @@ export default function AdminScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await deleteTechnician(technician.id);
+              await deleteTechnician(technician.$id);
               loadTechnicians();
             } catch (error) {
               Alert.alert(t("common.error"), t("admin.deleteFailed"));
@@ -90,8 +90,8 @@ export default function AdminScreen() {
     ]);
   };
 
-  const renderTechnician = ({ item }: { item: Technician }) => {
-    const color = skillColors[item.skill];
+  const renderTechnician = ({ item }: { item: TechnicianWithProfile }) => {
+    const color = skillColors[item.skills[0]];
 
     return (
       <View className="bg-surface mx-4 mb-3 rounded-xl p-4 flex-row items-center shadow-sm">
@@ -114,7 +114,7 @@ export default function AdminScreen() {
               style={{ backgroundColor: `${color}15` }}
             >
               <Text className="text-xs font-semibold" style={{ color }}>
-                {t(`skills.${item.skill}`)}
+                {item.skills.map((s) => t(`skills.${s}`)).join(", ")}
               </Text>
             </View>
             <View className="flex-row items-center gap-1">
@@ -140,7 +140,7 @@ export default function AdminScreen() {
         <View className="flex-row gap-2 ml-3">
           <TouchableOpacity
             className="w-10 h-10 rounded-lg bg-primary-muted items-center justify-center"
-            onPress={() => router.push(`/edit-technician/${item.id}`)}
+            onPress={() => router.push(`/edit-technician/${item.$id}`)}
           >
             <Ionicons name="pencil" size={18} color="#065F46" />
           </TouchableOpacity>
@@ -213,7 +213,7 @@ export default function AdminScreen() {
         <FlatList
           data={technicians}
           renderItem={renderTechnician}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.$id}
           ListHeaderComponent={renderHeader}
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}

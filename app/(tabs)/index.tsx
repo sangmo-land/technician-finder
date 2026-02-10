@@ -12,7 +12,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { Technician, Skill, SortOption } from "../../src/types";
+import { TechnicianWithProfile, Skill, SortOption } from "../../src/types";
 import {
   getAllTechnicians,
   initializeStorage,
@@ -37,7 +37,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
-  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [technicians, setTechnicians] = useState<TechnicianWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -72,13 +72,13 @@ export default function HomeScreen() {
       filtered = filtered.filter(
         (t) =>
           t.name.toLowerCase().includes(q) ||
-          t.skill.toLowerCase().includes(q) ||
+          t.skills.some((s) => s.toLowerCase().includes(q)) ||
           t.location.toLowerCase().includes(q),
       );
     }
 
     if (selectedSkill) {
-      filtered = filtered.filter((t) => t.skill === selectedSkill);
+      filtered = filtered.filter((t) => t.skills.includes(selectedSkill));
     }
 
     if (selectedLocation) {
@@ -133,7 +133,7 @@ export default function HomeScreen() {
   // Technicians list excluding the featured one (if no filters active)
   const listTechnicians = useMemo(() => {
     if (hasActiveFilters || !featuredExpert) return filteredTechnicians;
-    return filteredTechnicians.filter((t) => t.id !== featuredExpert.id);
+    return filteredTechnicians.filter((t) => t.$id !== featuredExpert.$id);
   }, [filteredTechnicians, featuredExpert, hasActiveFilters]);
 
   const handleRefresh = () => {
@@ -141,11 +141,11 @@ export default function HomeScreen() {
     loadTechnicians();
   };
 
-  const handleTechnicianPress = (technician: Technician) => {
-    router.push(`/technician/${technician.id}`);
+  const handleTechnicianPress = (technician: TechnicianWithProfile) => {
+    router.push(`/technician/${technician.$id}`);
   };
 
-  const renderTechnician = ({ item }: { item: Technician }) => (
+  const renderTechnician = ({ item }: { item: TechnicianWithProfile }) => (
     <TechnicianCard
       technician={item}
       onPress={() => handleTechnicianPress(item)}
@@ -313,7 +313,7 @@ export default function HomeScreen() {
         <FlatList
           data={listTechnicians}
           renderItem={renderTechnician}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.$id}
           ListHeaderComponent={renderHeader}
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}

@@ -18,18 +18,23 @@ import {
   SKILLS,
   LOCATIONS,
   AVAILABILITY_OPTIONS,
-  Technician,
+  TechnicianWithProfile,
 } from "../../src/types";
 import {
   updateTechnician,
   getTechnicianById,
 } from "../../src/services/storage";
 import { skillColors } from "../../src/constants/colors";
-import { InputField, SelectField, LoadingSpinner, GalleryPicker } from "../../src/components";
+import {
+  InputField,
+  SelectField,
+  LoadingSpinner,
+  GalleryPicker,
+} from "../../src/components";
 
 interface FormErrors {
   name?: string;
-  skill?: string;
+  skills?: string;
   phone?: string;
   location?: string;
   experienceYears?: string;
@@ -42,12 +47,14 @@ export default function EditTechnicianScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
 
-  const [technician, setTechnician] = useState<Technician | null>(null);
+  const [technician, setTechnician] = useState<TechnicianWithProfile | null>(
+    null,
+  );
   const [pageLoading, setPageLoading] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const [name, setName] = useState("");
-  const [skill, setSkill] = useState<Skill | null>(null);
+  const [skills, setSkills] = useState<Skill[]>([]);
   const [phone, setPhone] = useState("");
   const [location, setLocation] = useState<string | null>(null);
   const [experienceYears, setExperienceYears] = useState("");
@@ -65,7 +72,7 @@ export default function EditTechnicianScreen() {
         if (data) {
           setTechnician(data);
           setName(data.name);
-          setSkill(data.skill);
+          setSkills(data.skills);
           setPhone(data.phone);
           setLocation(data.location);
           setExperienceYears(data.experienceYears.toString());
@@ -93,8 +100,8 @@ export default function EditTechnicianScreen() {
       newErrors.name = t("validation.nameMinLength");
     }
 
-    if (!skill) {
-      newErrors.skill = t("validation.selectSkill");
+    if (skills.length === 0) {
+      newErrors.skills = t("validation.selectSkill");
     }
 
     if (!phone.trim()) {
@@ -137,11 +144,8 @@ export default function EditTechnicianScreen() {
     setLoading(true);
 
     try {
-      const formData: TechnicianFormData = {
-        name: name.trim(),
-        skill: skill!,
-        phone: phone.trim(),
-        location: location!,
+      const formData: Partial<TechnicianFormData> = {
+        skills: skills,
         experienceYears: parseInt(experienceYears, 10),
         bio: bio.trim(),
         hourlyRate: parseInt(hourlyRate, 10),
@@ -149,7 +153,7 @@ export default function EditTechnicianScreen() {
         gallery,
       };
 
-      await updateTechnician(technician.id, formData);
+      await updateTechnician(technician.$id, formData);
       router.back();
     } catch (error) {
       Alert.alert(t("common.error"), t("form.updateFailed"));
@@ -181,7 +185,7 @@ export default function EditTechnicianScreen() {
     );
   }
 
-  const techSkillColor = skillColors[technician.skill] || "#6B7280";
+  const techSkillColor = skillColors[technician.skills[0]] || "#6B7280";
 
   return (
     <KeyboardAvoidingView
@@ -225,14 +229,22 @@ export default function EditTechnicianScreen() {
 
           <SelectField
             label={t("form.skillTrade")}
-            value={skill ? t(`skills.${skill}`) : null}
+            value={
+              skills.length > 0
+                ? skills.map((s) => t(`skills.${s}`)).join(", ")
+                : null
+            }
             options={SKILLS.map((s) => t(`skills.${s}`))}
             onSelect={(val) => {
               const match = SKILLS.find((s) => t(`skills.${s}`) === val);
-              setSkill(match || null);
+              if (match && !skills.includes(match)) {
+                setSkills([...skills, match]);
+              } else if (match && skills.includes(match)) {
+                setSkills(skills.filter((s) => s !== match));
+              }
             }}
             placeholder={t("form.selectSkill")}
-            error={errors.skill}
+            error={errors.skills}
           />
 
           <InputField

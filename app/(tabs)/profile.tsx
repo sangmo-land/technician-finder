@@ -25,8 +25,9 @@ import {
   createTechnician,
   createUserProfile,
   getUserProfile,
+  uploadGalleryImage,
 } from "../../src/services/appwrite";
-import { InputField, SelectField } from "../../src/components";
+import { InputField, SelectField, GalleryPicker } from "../../src/components";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -50,6 +51,7 @@ export default function ProfileScreen() {
     "available",
   );
   const [bio, setBio] = useState("");
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [registering, setRegistering] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -143,7 +145,22 @@ export default function ProfileScreen() {
         // because updateUserProfile needs the document ID — it already exists
       }
 
-      // 2. Create the technician document
+      // 2. Upload gallery images to Appwrite Storage
+      const galleryFileIds: string[] = [];
+      for (const uri of galleryImages) {
+        const filename = uri.split("/").pop() || `photo_${Date.now()}.jpg`;
+        const ext = filename.split(".").pop()?.toLowerCase() || "jpg";
+        const mimeType = ext === "png" ? "image/png" : "image/jpeg";
+        const fileId = await uploadGalleryImage({
+          name: filename,
+          type: mimeType,
+          size: 0,
+          uri,
+        });
+        galleryFileIds.push(fileId);
+      }
+
+      // 3. Create the technician document
       await createTechnician({
         userId: user.$id,
         skills,
@@ -151,7 +168,7 @@ export default function ProfileScreen() {
         bio: bio.trim(),
         hourlyRate: parseInt(hourlyRate, 10),
         availability: availability!,
-        gallery: [],
+        gallery: galleryFileIds,
       });
 
       setIsTechnician(true);
@@ -241,6 +258,7 @@ export default function ProfileScreen() {
 
         {checkingStatus ? (
           <View
+            key="checking"
             className="bg-surface mx-4 rounded-2xl p-6 items-center"
             style={{ borderWidth: 1, borderColor: "#E2E8F0" }}
           >
@@ -249,6 +267,7 @@ export default function ProfileScreen() {
         ) : isTechnician && !showRegistration ? (
           /* Already a technician */
           <View
+            key="is-technician"
             className="bg-surface mx-4 rounded-2xl p-5"
             style={{ borderWidth: 1, borderColor: "#E2E8F0" }}
           >
@@ -277,7 +296,7 @@ export default function ProfileScreen() {
           </View>
         ) : showRegistration ? (
           /* Registration Form */
-          <View className="mx-4">
+          <View key="registration" className="mx-4">
             <View
               className="bg-surface rounded-2xl p-5 mb-3"
               style={{ borderWidth: 1, borderColor: "#E2E8F0" }}
@@ -380,6 +399,12 @@ export default function ProfileScreen() {
                 placeholder={t("profile.bioPlaceholder")}
                 multiline
               />
+
+              {/* Gallery */}
+              <GalleryPicker
+                images={galleryImages}
+                onChange={setGalleryImages}
+              />
             </View>
 
             {/* Action buttons */}
@@ -416,6 +441,7 @@ export default function ProfileScreen() {
         ) : (
           /* Not a technician — CTA to register */
           <View
+            key="cta"
             className="bg-surface mx-4 rounded-2xl p-5"
             style={{ borderWidth: 1, borderColor: "#E2E8F0" }}
           >

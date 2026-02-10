@@ -141,6 +141,8 @@ export default {
     resetMessage:
       "Cela restaurera tous les techniciens aux données d'exemple d'origine. Continuer ?",
     resetFailed: "Échec de la réinitialisation des données.",
+    noAccess:
+      "Vous n'avez pas la permission d'accéder à cette page. Seuls les administrateurs peuvent gérer les techniciens.",
   },
 
   // Favorites screen

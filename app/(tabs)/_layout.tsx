@@ -2,9 +2,11 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { colors } from "../../src/constants/colors";
+import { useAuth } from "../../src/contexts/AuthContext";
 
 export default function TabLayout() {
   const { t } = useTranslation();
+  const { isAdmin } = useAuth();
 
   return (
     <Tabs
@@ -73,6 +75,7 @@ export default function TabLayout() {
               color={color}
             />
           ),
+          href: isAdmin ? "/admin" : null,
         }}
       />
       <Tabs.Screen

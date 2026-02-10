@@ -2,7 +2,7 @@ export type Skill = 'Plumber' | 'Electrician' | 'Carpenter' | 'Mason' | 'Painter
 
 export type Availability = "available" | "busy" | "offline";
 
-export type Role = "user" | "technician";
+export type Role = "user" | "technician" | "admin";
 
 export type SortOption = "rating" | "experience" | "price_low" | "price_high";
 

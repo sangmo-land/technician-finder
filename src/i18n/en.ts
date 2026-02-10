@@ -139,6 +139,8 @@ export default {
     resetMessage:
       "This will restore all technicians to the original sample data. Continue?",
     resetFailed: "Failed to reset data.",
+    noAccess:
+      "You don't have permission to access this page. Only administrators can manage technicians.",
   },
 
   // Favorites screen

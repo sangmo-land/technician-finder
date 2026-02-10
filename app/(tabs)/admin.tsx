@@ -19,13 +19,41 @@ import {
 } from "../../src/services/storage";
 import { skillColors } from "../../src/constants/colors";
 import { EmptyState, LoadingSpinner } from "../../src/components";
+import { useAuth } from "../../src/contexts/AuthContext";
 
 export default function AdminScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { isAdmin } = useAuth();
   const [technicians, setTechnicians] = useState<TechnicianWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Guard: non-admin users see nothing
+  if (!isAdmin) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+        }}
+      >
+        <Ionicons name="lock-closed" size={48} color="#94A3B8" />
+        <Text
+          style={{
+            fontSize: 16,
+            color: "#64748B",
+            marginTop: 12,
+            textAlign: "center",
+          }}
+        >
+          {t("admin.noAccess")}
+        </Text>
+      </View>
+    );
+  }
 
   const loadTechnicians = useCallback(async () => {
     try {

@@ -11,6 +11,7 @@ import {
 interface AuthContextType {
   user: Models.User<Models.Preferences> | null;
   isLoading: boolean;
+  isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -45,7 +46,7 @@ const DEMO_USER = {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<Models.User<Models.Preferences> | null>(
-    DEMO_MODE ? DEMO_USER : null
+    DEMO_MODE ? DEMO_USER : null,
   );
   const [isLoading, setIsLoading] = useState(DEMO_MODE ? false : true);
 
@@ -71,11 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(loggedIn);
   }
 
-  async function handleSignUp(
-    email: string,
-    password: string,
-    name: string
-  ) {
+  async function handleSignUp(email: string, password: string, name: string) {
     const newUser = await appwriteSignUp(email, password, name);
     setUser(newUser);
   }
@@ -95,6 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         isLoading,
+        isAdmin: Array.isArray(user?.labels) && user.labels.includes("admin"),
         signIn: handleSignIn,
         signUp: handleSignUp,
         signOut: handleSignOut,

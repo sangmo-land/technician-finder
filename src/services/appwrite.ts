@@ -79,13 +79,36 @@ export async function signInWithGoogle(): Promise<
     /* no session to delete */
   }
 
-  // Use native OAuth session for mobile
-  await account.createOAuth2Session(
+  // For production builds, use the app scheme
+  const redirectUri = "technician-finder://";
+
+  const response = account.createOAuth2Token(
     OAuthProvider.Google,
-    "technician-finder://oauth", // success redirect
-    "technician-finder://oauth", // failure redirect
+    redirectUri,
+    redirectUri,
   );
 
+  // Open the OAuth URL in the browser
+  const browserResult = await WebBrowser.openAuthSessionAsync(
+    (response as any).toString(),
+    redirectUri,
+  );
+
+  if (browserResult.type !== "success" || !browserResult.url) {
+    throw new Error("Google sign-in was cancelled");
+  }
+
+  // Extract the secret & userId from the callback URL
+  const url = new URL(browserResult.url);
+  const secret = url.searchParams.get("secret");
+  const userId = url.searchParams.get("userId");
+
+  if (!secret || !userId) {
+    throw new Error("Missing authentication parameters");
+  }
+
+  // Create session from the OAuth2 token
+  await account.createSession(userId, secret);
   return account.get();
 }
 

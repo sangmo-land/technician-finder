@@ -297,7 +297,7 @@ export default function ProfileScreen() {
       }
 
       // 3. Create the technician document
-      await createTechnician({
+      const newTech = await createTechnician({
         userId: user.$id,
         skills,
         experienceYears: parseInt(experienceYears, 10),
@@ -307,6 +307,8 @@ export default function ProfileScreen() {
         gallery: galleryFileIds,
       });
 
+      setTechDocId(newTech.$id);
+      setProfileDocId(profile.$id);
       setIsTechnician(true);
       setShowRegistration(false);
 

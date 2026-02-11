@@ -47,6 +47,15 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "root": "./app"
+      },
+      "eas": {
+        "projectId": "5b165245-6288-4a9e-8c58-e70320c6256e"
+      }
+    },
+    "owner": "momolandry"
   }
 }

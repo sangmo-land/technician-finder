@@ -185,7 +185,7 @@ const TechnicianCard: React.FC<TechnicianCardProps> = React.memo(
             <View className="flex-1">
               <Text
                 className={`font-bold text-text ${
-                  isFeatured ? "text-[16px]" : "text-[15px]"
+                  isFeatured ? "text-lg" : "text-base"
                 }`}
                 numberOfLines={1}
               >
@@ -196,11 +196,11 @@ const TechnicianCard: React.FC<TechnicianCardProps> = React.memo(
                 <View className="flex-row items-center gap-1">
                   <Ionicons
                     name={skillIcon as any}
-                    size={12}
+                    size={13}
                     color={skillColor}
                   />
                   <Text
-                    className="text-xs font-semibold"
+                    className="text-sm font-semibold"
                     style={{ color: skillColor }}
                   >
                     {technician.skills
@@ -215,7 +215,7 @@ const TechnicianCard: React.FC<TechnicianCardProps> = React.memo(
                     style={{ backgroundColor: avail.color }}
                   />
                   <Text
-                    className="text-[11px] font-medium"
+                    className="text-xs font-medium"
                     style={{ color: avail.color }}
                   >
                     {t(avail.labelKey)}
@@ -237,7 +237,7 @@ const TechnicianCard: React.FC<TechnicianCardProps> = React.memo(
           {isFeatured && technician.bio && (
             <View className="px-4 pb-2">
               <Text
-                className="text-xs text-text-muted leading-4"
+                className="text-sm text-text-muted leading-4"
                 numberOfLines={2}
               >
                 {technician.bio}
@@ -253,22 +253,20 @@ const TechnicianCard: React.FC<TechnicianCardProps> = React.memo(
           >
             {/* Rating */}
             <View className="flex-row items-center gap-1 mr-4">
-              <Ionicons name="star" size={12} color="#F59E0B" />
-              <Text className="text-xs font-bold text-text">
+              <Ionicons name="star" size={13} color="#F59E0B" />
+              <Text className="text-sm font-bold text-text">
                 {rating > 0 ? rating.toFixed(1) : t("common.new")}
               </Text>
               {reviewCount > 0 && (
-                <Text className="text-[10px] text-text-muted">
-                  ({reviewCount})
-                </Text>
+                <Text className="text-xs text-text-muted">({reviewCount})</Text>
               )}
             </View>
 
             {/* Location */}
             <View className="flex-row items-center gap-1 mr-4">
-              <Ionicons name="location-outline" size={12} color="#94A3B8" />
+              <Ionicons name="location-outline" size={13} color="#94A3B8" />
               <Text
-                className="text-[11px] text-text-secondary font-medium"
+                className="text-xs text-text-secondary font-medium"
                 numberOfLines={1}
               >
                 {technician.location}
@@ -277,16 +275,16 @@ const TechnicianCard: React.FC<TechnicianCardProps> = React.memo(
 
             {/* Profile Views */}
             <View className="flex-row items-center gap-1">
-              <Ionicons name="eye-outline" size={12} color="#94A3B8" />
-              <Text className="text-[11px] text-text-secondary font-medium">
+              <Ionicons name="eye-outline" size={13} color="#94A3B8" />
+              <Text className="text-xs text-text-secondary font-medium">
                 {technician.profileViews ?? 0}
               </Text>
             </View>
 
             {/* Experience */}
             <View className="flex-row items-center gap-1 ml-auto">
-              <Ionicons name="calendar-outline" size={12} color="#94A3B8" />
-              <Text className="text-[11px] text-text-secondary font-medium">
+              <Ionicons name="calendar-outline" size={13} color="#94A3B8" />
+              <Text className="text-xs text-text-secondary font-medium">
                 {technician.createdAt
                   ? new Date(technician.createdAt).toLocaleDateString(
                       undefined,

@@ -51,6 +51,23 @@ export default {
     technicians: "Techniciens",
     recentlyViewed: "Vus récemment",
     seeAll: "Voir tout",
+    popularThisWeek: "Populaire cette semaine",
+  },
+
+  // Quick Actions
+  quickActions: {
+    title: "Actions Rapides",
+    emergency: "Urgence",
+    schedule: "Planifier",
+    nearest: "Plus Proche",
+    team: "Réservation d'équipe",
+    emergencyTitle: "Demande d'urgence",
+    emergencyMessage: "Trouver un technicien disponible maintenant ?",
+    scheduleTitle: "Planifier pour plus tard",
+    nearestTitle: "Trouver le plus proche",
+    nearestMessage: "Afficher les techniciens les plus proches de vous ?",
+    teamTitle: "Réservation d'équipe",
+    teamMessage: "Réserver plusieurs techniciens en même temps ?",
   },
 
   // Skills

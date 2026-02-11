@@ -228,7 +228,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
                   </View>
                   <Text
                     className={`text-xs font-semibold text-center ${
-                      isSelected ? "text-text" : "text-text-muted"
+                      isSelected ? "text-text" : "text-text-secondary"
                     }`}
                     numberOfLines={1}
                   >

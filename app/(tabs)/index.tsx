@@ -252,221 +252,241 @@ export default function HomeScreen() {
     [handleTechnicianPress],
   );
 
-  const renderHeader = () => (
-    <View>
-      {/* Featured Expert Spotlight */}
-      {!hasActiveFilters && featuredExpert && (
-        <View className="mt-3">
-          <View className="flex-row items-center gap-2 px-4 mb-2">
-            <Ionicons name="trophy" size={16} color="#F59E0B" />
-            <Text className="text-sm font-bold text-text uppercase tracking-wider">
-              {t("home.featuredExpert")}
+  const renderPopularItem = useCallback(
+    ({ item }: { item: TechnicianWithProfile }) => (
+      <TouchableOpacity
+        className="mr-3 w-48 bg-surface rounded-xl overflow-hidden shadow-sm"
+        style={{ borderWidth: 1, borderColor: "#FEF3C7" }}
+        onPress={() => handleTechnicianPress(item)}
+        activeOpacity={0.8}
+      >
+        {/* Trending Badge */}
+        <View className="absolute top-2 right-2 z-10">
+          <View
+            className="px-2 py-1 rounded-full flex-row items-center gap-1"
+            style={{ backgroundColor: "rgba(245, 158, 11, 0.9)" }}
+          >
+            <Ionicons name="trending-up" size={11} color="#FFFFFF" />
+            <Text className="text-[10px] font-bold text-white">
+              {item.profileViews} views
             </Text>
           </View>
-          <TechnicianCard
-            technician={featuredExpert}
-            onPress={() => handleTechnicianPress(featuredExpert)}
-            variant="featured"
-          />
         </View>
-      )}
 
-      {/* Popular This Week */}
-      {!hasActiveFilters && popularThisWeek.length > 0 && (
-        <View className="mt-3">
-          <View className="flex-row items-center gap-2 px-4 mb-2">
-            <Ionicons name="flame" size={16} color="#F59E0B" />
-            <Text className="text-sm font-bold text-text uppercase tracking-wider">
-              {t("home.popularThisWeek")}
-            </Text>
-          </View>
-          <FlatList
-            data={popularThisWeek}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 12 }}
-            keyExtractor={(item) => `popular-${item.$id}`}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                className="mr-3 w-48 bg-surface rounded-xl overflow-hidden shadow-sm"
-                style={{ borderWidth: 1, borderColor: "#FEF3C7" }}
-                onPress={() => handleTechnicianPress(item)}
-                activeOpacity={0.8}
-              >
-                {/* Trending Badge */}
-                <View className="absolute top-2 right-2 z-10">
-                  <View
-                    className="px-2 py-1 rounded-full flex-row items-center gap-1"
-                    style={{ backgroundColor: "rgba(245, 158, 11, 0.9)" }}
-                  >
-                    <Ionicons name="trending-up" size={10} color="#FFFFFF" />
-                    <Text className="text-[9px] font-bold text-white">
-                      {item.profileViews} views
-                    </Text>
-                  </View>
-                </View>
-
-                <View
-                  className="h-20 items-center justify-center"
-                  style={
-                    item.avatar
-                      ? undefined
-                      : {
-                          backgroundColor: `${skillColors[item.skills[0]] || "#6B7280"}20`,
-                        }
-                  }
-                >
-                  {item.avatar ? (
-                    <Image
-                      source={{ uri: item.avatar }}
-                      className="w-full h-full"
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <Ionicons name="person" size={28} color="#94A3B8" />
-                  )}
-                </View>
-                <View className="p-2.5">
-                  <Text
-                    className="text-xs font-semibold text-text"
-                    numberOfLines={1}
-                  >
-                    {item.name}
-                  </Text>
-                  <Text
-                    className="text-[10px] text-text-muted mt-0.5"
-                    numberOfLines={1}
-                  >
-                    {item.skills
-                      .map((s: string) => t(`skills.${s}`, { defaultValue: s }))
-                      .join(", ")}
-                  </Text>
-                  <View className="flex-row items-center justify-between mt-1.5">
-                    <View className="flex-row items-center gap-1">
-                      <Ionicons name="star" size={10} color="#F59E0B" />
-                      <Text className="text-[10px] font-semibold text-text">
-                        {item.rating?.toFixed(1) || "New"}
-                      </Text>
-                    </View>
-                    <Text className="text-[9px] text-text-muted">
-                      {item.location}
-                    </Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            )}
-          />
+        <View
+          className="h-20 items-center justify-center"
+          style={
+            item.avatar
+              ? undefined
+              : {
+                  backgroundColor: `${skillColors[item.skills[0]] || "#6B7280"}20`,
+                }
+          }
+        >
+          {item.avatar ? (
+            <Image
+              source={{ uri: item.avatar }}
+              className="w-full h-full"
+              resizeMode="cover"
+            />
+          ) : (
+            <Ionicons name="person" size={28} color="#94A3B8" />
+          )}
         </View>
-      )}
-
-      {/* Recently Viewed */}
-      {!hasActiveFilters && recentlyViewed.length > 0 && (
-        <View className="mt-3">
-          <View className="flex-row items-center gap-2 px-4 mb-2">
-            <Ionicons name="time-outline" size={16} color="#6366F1" />
-            <Text className="text-sm font-bold text-text uppercase tracking-wider">
-              {t("home.recentlyViewed")}
-            </Text>
-          </View>
-          <FlatList
-            data={recentlyViewed}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 12 }}
-            keyExtractor={(item) => `recent-${item.$id}`}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                className="mr-3 w-36 bg-surface rounded-xl overflow-hidden shadow-sm"
-                style={{ borderWidth: 1, borderColor: "#F1F5F9" }}
-                onPress={() => handleTechnicianPress(item)}
-                activeOpacity={0.8}
-              >
-                <View
-                  className="h-16 items-center justify-center"
-                  style={
-                    item.avatar
-                      ? undefined
-                      : {
-                          backgroundColor: `${skillColors[item.skills[0]] || "#6B7280"}20`,
-                        }
-                  }
-                >
-                  {item.avatar ? (
-                    <Image
-                      source={{ uri: item.avatar }}
-                      className="w-full h-full"
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <Ionicons name="person" size={24} color="#94A3B8" />
-                  )}
-                </View>
-                <View className="p-2.5">
-                  <Text
-                    className="text-xs font-semibold text-text"
-                    numberOfLines={1}
-                  >
-                    {item.name}
-                  </Text>
-                  <Text
-                    className="text-[10px] text-text-muted mt-0.5"
-                    numberOfLines={1}
-                  >
-                    {item.skills
-                      .map((s: string) => t(`skills.${s}`))
-                      .join(", ")}
-                  </Text>
-                  <View className="flex-row items-center gap-1 mt-1">
-                    <View
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{
-                        backgroundColor:
-                          item.availability === "available"
-                            ? "#059669"
-                            : item.availability === "busy"
-                              ? "#D97706"
-                              : "#94A3B8",
-                      }}
-                    />
-                    <Text className="text-[10px] text-text-muted">
-                      {item.location}
-                    </Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-      )}
-
-      {/* Section Header: All Technicians */}
-      <View className="flex-row items-center justify-between px-4 mt-4 mb-1">
-        <View className="flex-row items-center gap-2">
-          <Ionicons name="people" size={16} color="#065F46" />
-          <Text className="text-sm font-bold text-text uppercase tracking-wider">
-            {hasActiveFilters ? t("home.results") : t("home.allTechnicians")}
+        <View className="p-2.5">
+          <Text className="text-sm font-semibold text-text" numberOfLines={1}>
+            {item.name}
           </Text>
-        </View>
-        <View className="bg-primary-muted px-2.5 py-1 rounded-lg">
-          <Text className="text-xs font-bold text-primary">
-            {listTechnicians.length}
+          <Text
+            className="text-xs text-text-secondary mt-0.5"
+            numberOfLines={1}
+          >
+            {item.skills
+              .map((s: string) => t(`skills.${s}`, { defaultValue: s }))
+              .join(", ")}
           </Text>
+          <View className="flex-row items-center justify-between mt-1.5">
+            <View className="flex-row items-center gap-1">
+              <Ionicons name="star" size={11} color="#F59E0B" />
+              <Text className="text-xs font-semibold text-text">
+                {item.rating?.toFixed(1) || "New"}
+              </Text>
+            </View>
+            <Text className="text-[10px] text-text-muted">{item.location}</Text>
+          </View>
         </View>
+      </TouchableOpacity>
+    ),
+    [handleTechnicianPress, t],
+  );
+
+  const renderRecentItem = useCallback(
+    ({ item }: { item: TechnicianWithProfile }) => (
+      <TouchableOpacity
+        className="mr-3 w-36 bg-surface rounded-xl overflow-hidden shadow-sm"
+        style={{ borderWidth: 1, borderColor: "#F1F5F9" }}
+        onPress={() => handleTechnicianPress(item)}
+        activeOpacity={0.8}
+      >
+        <View
+          className="h-16 items-center justify-center"
+          style={
+            item.avatar
+              ? undefined
+              : {
+                  backgroundColor: `${skillColors[item.skills[0]] || "#6B7280"}20`,
+                }
+          }
+        >
+          {item.avatar ? (
+            <Image
+              source={{ uri: item.avatar }}
+              className="w-full h-full"
+              resizeMode="cover"
+            />
+          ) : (
+            <Ionicons name="person" size={24} color="#94A3B8" />
+          )}
+        </View>
+        <View className="p-2.5">
+          <Text className="text-sm font-semibold text-text" numberOfLines={1}>
+            {item.name}
+          </Text>
+          <Text
+            className="text-xs text-text-secondary mt-0.5"
+            numberOfLines={1}
+          >
+            {item.skills.map((s: string) => t(`skills.${s}`)).join(", ")}
+          </Text>
+          <View className="flex-row items-center gap-1 mt-1">
+            <View
+              className="w-1.5 h-1.5 rounded-full"
+              style={{
+                backgroundColor:
+                  item.availability === "available"
+                    ? "#059669"
+                    : item.availability === "busy"
+                      ? "#D97706"
+                      : "#94A3B8",
+              }}
+            />
+            <Text className="text-xs text-text-muted">{item.location}</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    ),
+    [handleTechnicianPress, t],
+  );
+
+  const renderHeader = useCallback(
+    () => (
+      <View>
+        {/* Featured Expert Spotlight */}
+        {!hasActiveFilters && featuredExpert && (
+          <View className="mt-3">
+            <View className="flex-row items-center gap-2 px-4 mb-2">
+              <Ionicons name="trophy" size={18} color="#F59E0B" />
+              <Text className="text-base font-bold text-text uppercase tracking-wider">
+                {t("home.featuredExpert")}
+              </Text>
+            </View>
+            <TechnicianCard
+              technician={featuredExpert}
+              onPress={() => handleTechnicianPress(featuredExpert)}
+              variant="featured"
+            />
+          </View>
+        )}
+
+        {/* Popular This Week */}
+        {!hasActiveFilters && popularThisWeek.length > 0 && (
+          <View className="mt-3">
+            <View className="flex-row items-center gap-2 px-4 mb-2">
+              <Ionicons name="flame" size={18} color="#F59E0B" />
+              <Text className="text-base font-bold text-text uppercase tracking-wider">
+                {t("home.popularThisWeek")}
+              </Text>
+            </View>
+            <FlatList
+              data={popularThisWeek}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 12 }}
+              keyExtractor={(item) => `popular-${item.$id}`}
+              renderItem={renderPopularItem}
+              removeClippedSubviews
+              maxToRenderPerBatch={4}
+              windowSize={3}
+            />
+          </View>
+        )}
+
+        {/* Recently Viewed */}
+        {!hasActiveFilters && recentlyViewed.length > 0 && (
+          <View className="mt-3">
+            <View className="flex-row items-center gap-2 px-4 mb-2">
+              <Ionicons name="time-outline" size={18} color="#6366F1" />
+              <Text className="text-base font-bold text-text uppercase tracking-wider">
+                {t("home.recentlyViewed")}
+              </Text>
+            </View>
+            <FlatList
+              data={recentlyViewed}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 12 }}
+              keyExtractor={(item) => `recent-${item.$id}`}
+              renderItem={renderRecentItem}
+              removeClippedSubviews
+              maxToRenderPerBatch={4}
+              windowSize={3}
+            />
+          </View>
+        )}
+
+        {/* Section Header: All Technicians */}
+        <View className="flex-row items-center justify-between px-4 mt-4 mb-1">
+          <View className="flex-row items-center gap-2">
+            <Ionicons name="people" size={18} color="#065F46" />
+            <Text className="text-base font-bold text-text uppercase tracking-wider">
+              {hasActiveFilters ? t("home.results") : t("home.allTechnicians")}
+            </Text>
+          </View>
+          <View className="bg-primary-muted px-2.5 py-1 rounded-lg">
+            <Text className="text-sm font-bold text-primary">
+              {listTechnicians.length}
+            </Text>
+          </View>
+        </View>
+
+        {/* Contextual filter description */}
+        {hasActiveFilters && (
+          <Text className="text-sm text-text-muted px-4 mb-1">
+            {selectedSkill
+              ? t(`skills.${selectedSkill}`) + "s"
+              : t("home.technicians")}
+            {selectedLocation
+              ? ` ${t("filters.city").toLowerCase()}: ${selectedLocation}`
+              : ""}
+            {searchQuery.trim() ? ` "${searchQuery.trim()}"` : ""}
+          </Text>
+        )}
       </View>
-
-      {/* Contextual filter description */}
-      {hasActiveFilters && (
-        <Text className="text-xs text-text-muted px-4 mb-1">
-          {selectedSkill
-            ? t(`skills.${selectedSkill}`) + "s"
-            : t("home.technicians")}
-          {selectedLocation
-            ? ` ${t("filters.city").toLowerCase()}: ${selectedLocation}`
-            : ""}
-          {searchQuery.trim() ? ` "${searchQuery.trim()}"` : ""}
-        </Text>
-      )}
-    </View>
+    ),
+    [
+      hasActiveFilters,
+      featuredExpert,
+      popularThisWeek,
+      recentlyViewed,
+      listTechnicians.length,
+      selectedSkill,
+      selectedLocation,
+      searchQuery,
+      handleTechnicianPress,
+      renderPopularItem,
+      renderRecentItem,
+      t,
+    ],
   );
 
   if (loading) {
@@ -491,8 +511,11 @@ export default function HomeScreen() {
         {/* Top row: Greeting + Language Switcher */}
         <View className="flex-row items-center justify-between mb-1">
           <View className="flex-row items-center gap-2">
-            <Ionicons name={greeting.icon as any} size={18} color="#FDE68A" />
-            <Text className="text-sm font-medium" style={{ color: "#FDE68A" }}>
+            <Ionicons name={greeting.icon as any} size={20} color="#FDE68A" />
+            <Text
+              className="text-base font-medium"
+              style={{ color: "#FDE68A" }}
+            >
               {t(greeting.key)}
             </Text>
           </View>
@@ -516,7 +539,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Title */}
-        <Text className="text-2xl font-bold text-white mb-1">
+        <Text className="text-3xl font-bold text-white mb-1">
           {t("home.heroTitle")}
         </Text>
 
@@ -525,7 +548,7 @@ export default function HomeScreen() {
           <View className="flex-row items-center gap-1">
             <View className="w-1.5 h-1.5 rounded-full bg-white" />
             <Text
-              className="text-xs font-semibold"
+              className="text-sm font-semibold"
               style={{ color: "rgba(255,255,255,0.75)" }}
             >
               {technicians.length} {t("home.experts")}
@@ -535,7 +558,7 @@ export default function HomeScreen() {
           <View className="flex-row items-center gap-1">
             <View className="w-1.5 h-1.5 rounded-full bg-green-400" />
             <Text
-              className="text-xs font-semibold"
+              className="text-sm font-semibold"
               style={{ color: "rgba(255,255,255,0.75)" }}
             >
               {availableCount} {t("home.available")}
@@ -545,7 +568,7 @@ export default function HomeScreen() {
           <View className="flex-row items-center gap-1">
             <View className="w-1.5 h-1.5 rounded-full bg-amber-300" />
             <Text
-              className="text-xs font-semibold"
+              className="text-sm font-semibold"
               style={{ color: "rgba(255,255,255,0.75)" }}
             >
               {uniqueCities} {t("home.cities")}

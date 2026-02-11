@@ -15,6 +15,7 @@ export interface UserProfile {
   phone: string;
   location: string;
   role: Role;
+  avatar?: string; // URL to avatar image
 }
 
 export type UserProfileFormData = Omit<UserProfile, "$id">;
@@ -35,11 +36,17 @@ export interface Technician {
   jobsCompleted: number;
   profileViews: number;
   gallery: string[]; // Appwrite Storage file IDs
+  createdAt: string; // ISO date string ($createdAt from Appwrite)
 }
 
 export type TechnicianFormData = Omit<
   Technician,
-  "$id" | "rating" | "reviewCount" | "jobsCompleted" | "profileViews"
+  | "$id"
+  | "rating"
+  | "reviewCount"
+  | "jobsCompleted"
+  | "profileViews"
+  | "createdAt"
 >;
 
 // ── Combined view for UI (joins UserProfile + Technician) ──
@@ -50,6 +57,7 @@ export interface TechnicianWithProfile {
   name: string; // from UserProfile
   phone: string; // from UserProfile
   location: string; // from UserProfile
+  avatar: string; // from UserProfile
   skills: Skill[];
   experienceYears: number;
   bio: string;
@@ -61,6 +69,7 @@ export interface TechnicianWithProfile {
   jobsCompleted: number;
   profileViews: number;
   gallery: string[]; // Appwrite Storage file IDs
+  createdAt: string; // ISO date string
 }
 
 export const SKILLS: Skill[] = [
@@ -85,16 +94,16 @@ export const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 ];
 
 export const LOCATIONS = [
-  'Douala',
-  'Yaoundé',
-  'Bamenda',
-  'Bafoussam',
-  'Garoua',
-  'Maroua',
-  'Ngaoundéré',
-  'Bertoua',
-  'Limbe',
-  'Buea',
-  'Kribi',
-  'Ebolowa',
+  "Douala",
+  "Yaoundé",
+  "Bamenda",
+  "Bafoussam",
+  "Garoua",
+  "Maroua",
+  "Ngaoundéré",
+  "Bertoua",
+  "Limbe",
+  "Buea",
+  "Kribi",
+  "Ebolowa",
 ];

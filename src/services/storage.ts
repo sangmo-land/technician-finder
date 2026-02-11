@@ -14,6 +14,8 @@ import {
 } from "./appwrite";
 
 const FAVORITES_KEY = "@favorites";
+const RECENTLY_VIEWED_KEY = "@recently_viewed";
+const MAX_RECENTLY_VIEWED = 10;
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const USERS_COLLECTION_ID =
@@ -28,9 +30,7 @@ function resolveGallery(fileIds: string[]): string[] {
 }
 
 /** Join a technician doc with its user profile */
-async function joinWithProfile(
-  tech: any,
-): Promise<TechnicianWithProfile> {
+async function joinWithProfile(tech: any): Promise<TechnicianWithProfile> {
   const profile = await getUserProfile(tech.userId);
   return {
     $id: tech.$id,
@@ -38,6 +38,7 @@ async function joinWithProfile(
     name: profile?.name ?? "Unknown",
     phone: profile?.phone ?? "",
     location: profile?.location ?? "",
+    avatar: profile?.avatar ?? "",
     skills: tech.skills ?? [],
     experienceYears: tech.experienceYears ?? 0,
     bio: tech.bio ?? "",
@@ -49,6 +50,7 @@ async function joinWithProfile(
     jobsCompleted: tech.jobsCompleted ?? 0,
     profileViews: tech.profileViews ?? 0,
     gallery: resolveGallery(tech.gallery ?? []),
+    createdAt: tech.$createdAt ?? "",
   };
 }
 
@@ -165,6 +167,56 @@ export const isFavorite = async (technicianId: string): Promise<boolean> => {
   } catch (error) {
     console.error("Error checking favorite:", error);
     return false;
+  }
+};
+
+// ── Recently Viewed (local via AsyncStorage) ──
+
+export const getRecentlyViewed = async (): Promise<string[]> => {
+  try {
+    const data = await AsyncStorage.getItem(RECENTLY_VIEWED_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error("Error getting recently viewed:", error);
+    return [];
+  }
+};
+
+export const addToRecentlyViewed = async (
+  technicianId: string,
+): Promise<void> => {
+  try {
+    const ids = await getRecentlyViewed();
+    // Remove if already exists, then prepend
+    const filtered = ids.filter((id) => id !== technicianId);
+    filtered.unshift(technicianId);
+    // Keep only last N
+    const trimmed = filtered.slice(0, MAX_RECENTLY_VIEWED);
+    await AsyncStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(trimmed));
+  } catch (error) {
+    console.error("Error saving recently viewed:", error);
+  }
+};
+
+export const getRecentlyViewedTechnicians = async (): Promise<
+  TechnicianWithProfile[]
+> => {
+  try {
+    const ids = await getRecentlyViewed();
+    if (ids.length === 0) return [];
+    const techs = await appwriteListTechnicians([
+      Query.equal("$id", ids),
+      Query.limit(ids.length),
+    ]);
+    const results = await Promise.all(techs.map(joinWithProfile));
+    // Preserve order from recently viewed IDs
+    const map = new Map(results.map((r) => [r.$id, r]));
+    return ids
+      .map((id) => map.get(id))
+      .filter(Boolean) as TechnicianWithProfile[];
+  } catch (error) {
+    console.error("Error getting recently viewed technicians:", error);
+    return [];
   }
 };
 

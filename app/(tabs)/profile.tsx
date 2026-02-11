@@ -6,12 +6,15 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Image,
+  Modal,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../../src/contexts/AuthContext";
 import { changeLanguage, supportedLanguages } from "../../src/i18n";
 import {
@@ -56,6 +59,8 @@ export default function ProfileScreen() {
   const [currentAvailability, setCurrentAvailability] =
     useState<Availability>("available");
   const [updatingAvailability, setUpdatingAvailability] = useState(false);
+  const [currentAvatar, setCurrentAvatar] = useState<string>("");
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
   // Registration form state
   const [phone, setPhone] = useState("");
@@ -89,6 +94,9 @@ export default function ProfileScreen() {
           setProfileDocId(profile?.$id ?? null);
           if (tech?.availability) {
             setCurrentAvailability(tech.availability);
+          }
+          if (profile?.avatar) {
+            setCurrentAvatar(profile.avatar);
           }
         }
       } catch {
@@ -130,6 +138,65 @@ export default function ProfileScreen() {
       Alert.alert(t("common.error"), t("profile.availabilityFailed"));
     } finally {
       setUpdatingAvailability(false);
+    }
+  };
+
+  const pickAvatarFromCamera = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        t("gallery.permissionRequired"),
+        t("gallery.cameraPermission"),
+      );
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets[0]) {
+      await uploadAndSaveAvatar(result.assets[0].uri);
+    }
+  };
+
+  const pickAvatarFromGallery = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        t("gallery.permissionRequired"),
+        t("gallery.libraryPermission"),
+      );
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets[0]) {
+      await uploadAndSaveAvatar(result.assets[0].uri);
+    }
+  };
+
+  const uploadAndSaveAvatar = async (uri: string) => {
+    if (!profileDocId) return;
+    setShowAvatarPicker(false);
+    try {
+      const fileName = `avatar_${Date.now()}.jpg`;
+      const fileId = await uploadGalleryImage({
+        name: fileName,
+        type: "image/jpeg",
+        size: 0,
+        uri,
+      });
+      const avatarUrl = getGalleryImageUrl(fileId);
+      await updateUserProfile(profileDocId, { avatar: avatarUrl });
+      setCurrentAvatar(avatarUrl);
+    } catch {
+      Alert.alert(t("common.error"), t("profile.avatarFailed"));
     }
   };
 
@@ -369,12 +436,34 @@ export default function ProfileScreen() {
         style={{ paddingTop: insets.top + 20, paddingBottom: 32 }}
         className="px-6 items-center"
       >
-        <View
-          className="w-20 h-20 rounded-full items-center justify-center mb-3"
-          style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+        <TouchableOpacity
+          className="relative mb-3"
+          onPress={() => profileDocId && setShowAvatarPicker(true)}
+          activeOpacity={0.8}
         >
-          <Text className="text-2xl font-bold text-white">{initials}</Text>
-        </View>
+          {currentAvatar ? (
+            <Image
+              source={{ uri: currentAvatar }}
+              className="w-20 h-20 rounded-full"
+              style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+            />
+          ) : (
+            <View
+              className="w-20 h-20 rounded-full items-center justify-center"
+              style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+            >
+              <Ionicons name="person" size={36} color="rgba(255,255,255,0.7)" />
+            </View>
+          )}
+          {profileDocId && (
+            <View
+              className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-white items-center justify-center"
+              style={{ borderWidth: 2, borderColor: "#065F46" }}
+            >
+              <Ionicons name="camera" size={14} color="#065F46" />
+            </View>
+          )}
+        </TouchableOpacity>
         <Text className="text-xl font-bold text-white">
           {user?.name || t("profile.guest")}
         </Text>
@@ -814,6 +903,68 @@ export default function ProfileScreen() {
           </View>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Avatar Picker Modal */}
+      <Modal
+        visible={showAvatarPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAvatarPicker(false)}
+      >
+        <TouchableOpacity
+          className="flex-1 justify-end"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          activeOpacity={1}
+          onPress={() => setShowAvatarPicker(false)}
+        >
+          <View className="bg-surface rounded-t-3xl px-6 pt-5 pb-10">
+            <View className="flex-row items-center justify-between mb-5">
+              <Text className="text-lg font-bold text-text">
+                {t("profile.changeAvatar")}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowAvatarPicker(false)}
+                className="w-8 h-8 rounded-full bg-background items-center justify-center"
+              >
+                <Ionicons name="close" size={18} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              className="flex-row items-center py-4 border-b"
+              style={{ borderColor: "#F1F5F9" }}
+              onPress={pickAvatarFromCamera}
+              activeOpacity={0.7}
+            >
+              <View
+                className="w-12 h-12 rounded-full items-center justify-center mr-4"
+                style={{ backgroundColor: "#D1FAE5" }}
+              >
+                <Ionicons name="camera" size={24} color="#065F46" />
+              </View>
+              <Text className="text-base font-medium text-text">
+                {t("gallery.takePhoto")}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="flex-row items-center py-4"
+              onPress={pickAvatarFromGallery}
+              activeOpacity={0.7}
+            >
+              <View
+                className="w-12 h-12 rounded-full items-center justify-center mr-4"
+                style={{ backgroundColor: "#DBEAFE" }}
+              >
+                <Ionicons name="images" size={24} color="#1D4ED8" />
+              </View>
+              <Text className="text-base font-medium text-text">
+                {t("gallery.chooseFromLibrary")}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }

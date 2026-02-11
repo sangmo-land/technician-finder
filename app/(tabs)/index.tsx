@@ -5,6 +5,7 @@ import {
   RefreshControl,
   Text,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -16,15 +17,18 @@ import { TechnicianWithProfile, Skill, SortOption } from "../../src/types";
 import {
   getAllTechnicians,
   initializeStorage,
+  getRecentlyViewedTechnicians,
 } from "../../src/services/storage";
 import {
   TechnicianCard,
   FilterBar,
   SearchBar,
   EmptyState,
-  LoadingSpinner,
+  SkeletonCard,
 } from "../../src/components";
+import { SkeletonList } from "../../src/components/SkeletonCard";
 import { changeLanguage, supportedLanguages } from "../../src/i18n";
+import { skillColors } from "../../src/constants/colors";
 
 function getGreetingKey(): { key: string; icon: string } {
   const hour = new Date().getHours();
@@ -44,12 +48,19 @@ export default function HomeScreen() {
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [selectedSort, setSelectedSort] = useState<SortOption | null>(null);
+  const [recentlyViewed, setRecentlyViewed] = useState<TechnicianWithProfile[]>(
+    [],
+  );
 
   const loadTechnicians = useCallback(async () => {
     try {
       await initializeStorage();
-      const data = await getAllTechnicians();
+      const [data, recent] = await Promise.all([
+        getAllTechnicians(),
+        getRecentlyViewedTechnicians(),
+      ]);
       setTechnicians(data);
+      setRecentlyViewed(recent);
     } catch (error) {
       console.error("Error loading technicians:", error);
     } finally {
@@ -151,6 +162,11 @@ export default function HomeScreen() {
     [router],
   );
 
+  const keyExtractor = useCallback(
+    (item: TechnicianWithProfile) => item.$id,
+    [],
+  );
+
   const renderTechnician = useCallback(
     ({ item }: { item: TechnicianWithProfile }) => (
       <TechnicianCard
@@ -176,6 +192,86 @@ export default function HomeScreen() {
             technician={featuredExpert}
             onPress={() => handleTechnicianPress(featuredExpert)}
             variant="featured"
+          />
+        </View>
+      )}
+
+      {/* Recently Viewed */}
+      {!hasActiveFilters && recentlyViewed.length > 0 && (
+        <View className="mt-3">
+          <View className="flex-row items-center gap-2 px-4 mb-2">
+            <Ionicons name="time-outline" size={16} color="#6366F1" />
+            <Text className="text-sm font-bold text-text uppercase tracking-wider">
+              {t("home.recentlyViewed")}
+            </Text>
+          </View>
+          <FlatList
+            data={recentlyViewed}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 12 }}
+            keyExtractor={(item) => `recent-${item.$id}`}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                className="mr-3 w-36 bg-surface rounded-xl overflow-hidden shadow-sm"
+                style={{ borderWidth: 1, borderColor: "#F1F5F9" }}
+                onPress={() => handleTechnicianPress(item)}
+                activeOpacity={0.8}
+              >
+                <View
+                  className="h-16 items-center justify-center"
+                  style={
+                    item.avatar
+                      ? undefined
+                      : {
+                          backgroundColor: `${skillColors[item.skills[0]] || "#6B7280"}20`,
+                        }
+                  }
+                >
+                  {item.avatar ? (
+                    <Image
+                      source={{ uri: item.avatar }}
+                      className="w-full h-full"
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <Ionicons name="person" size={24} color="#94A3B8" />
+                  )}
+                </View>
+                <View className="p-2.5">
+                  <Text
+                    className="text-xs font-semibold text-text"
+                    numberOfLines={1}
+                  >
+                    {item.name}
+                  </Text>
+                  <Text
+                    className="text-[10px] text-text-muted mt-0.5"
+                    numberOfLines={1}
+                  >
+                    {item.skills
+                      .map((s: string) => t(`skills.${s}`))
+                      .join(", ")}
+                  </Text>
+                  <View className="flex-row items-center gap-1 mt-1">
+                    <View
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{
+                        backgroundColor:
+                          item.availability === "available"
+                            ? "#059669"
+                            : item.availability === "busy"
+                              ? "#D97706"
+                              : "#94A3B8",
+                      }}
+                    />
+                    <Text className="text-[10px] text-text-muted">
+                      {item.location}
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            )}
           />
         </View>
       )}
@@ -211,7 +307,12 @@ export default function HomeScreen() {
   );
 
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <View className="flex-1 bg-background">
+        <View style={{ height: 180, backgroundColor: "#022C22" }} />
+        <SkeletonList count={4} />
+      </View>
+    );
   }
 
   return (
@@ -322,12 +423,13 @@ export default function HomeScreen() {
         <FlatList
           data={listTechnicians}
           renderItem={renderTechnician}
-          keyExtractor={(item) => item.$id}
+          keyExtractor={keyExtractor}
           ListHeaderComponent={renderHeader}
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
           removeClippedSubviews
           maxToRenderPerBatch={8}
+          updateCellsBatchingPeriod={50}
           windowSize={5}
           initialNumToRender={6}
           refreshControl={

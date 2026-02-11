@@ -215,6 +215,11 @@ export default function AdminScreen() {
     );
   };
 
+  const keyExtractor = useCallback(
+    (item: TechnicianWithProfile) => item.$id,
+    [],
+  );
+
   // ── Technician list renderers ──
   const renderTechnician = useCallback(
     ({ item }: { item: TechnicianWithProfile }) => {
@@ -526,12 +531,13 @@ export default function AdminScreen() {
           <FlatList
             data={technicians}
             renderItem={renderTechnician}
-            keyExtractor={(item) => item.$id}
+            keyExtractor={keyExtractor}
             ListHeaderComponent={renderTechnicianHeader}
             contentContainerStyle={{ paddingBottom: 100 }}
             showsVerticalScrollIndicator={false}
             removeClippedSubviews
             maxToRenderPerBatch={8}
+            updateCellsBatchingPeriod={50}
             windowSize={5}
             initialNumToRender={6}
             refreshControl={

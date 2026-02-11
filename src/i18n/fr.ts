@@ -49,6 +49,8 @@ export default {
     noTechniciansEmpty: "Aucun technicien disponible. Revenez plus tard !",
     filterDescription: '{{skill}} à {{location}} correspondant à "{{query}}"',
     technicians: "Techniciens",
+    recentlyViewed: "Vus récemment",
+    seeAll: "Voir tout",
   },
 
   // Skills
@@ -105,6 +107,7 @@ export default {
   card: {
     topRated: "Mieux noté",
     views: "vues",
+    memberSince: "Membre depuis {{date}}",
   },
 
   // Technician detail screen
@@ -130,6 +133,12 @@ export default {
       "Bonjour {{name}}, j'ai trouvé votre profil sur Technician Finder et j'aimerais discuter d'un travail.",
     whatsappFailed:
       "Impossible d'ouvrir WhatsApp. Assurez-vous qu'il est installé.",
+    share: "Partager",
+    shareTitle: "Découvrez {{name}} sur Technician Finder !",
+    shareMessage:
+      "{{name}} - {{skills}}\n📍 {{location}}\n📞 {{phone}}\n\nTrouvé sur Technician Finder",
+    shareFailed: "Impossible de partager ce profil.",
+    memberSince: "Membre depuis {{date}}",
   },
 
   // Admin screen
@@ -320,6 +329,10 @@ export default {
     quickAvailability: "Disponibilité",
     availabilityFailed:
       "Échec de la mise à jour de la disponibilité. Veuillez réessayer.",
+    changeAvatar: "Changer la photo",
+    chooseAvatar: "Photo de profil",
+    avatarUpdated: "Avatar mis à jour !",
+    avatarFailed: "Échec de la mise à jour de l'avatar. Veuillez réessayer.",
   },
 
   // Auth

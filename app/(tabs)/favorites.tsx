@@ -6,11 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from "react-i18next";
 import { TechnicianWithProfile } from "../../src/types";
 import { getFavoriteTechnicians } from "../../src/services/storage";
-import {
-  TechnicianCard,
-  EmptyState,
-  LoadingSpinner,
-} from "../../src/components";
+import { TechnicianCard, EmptyState } from "../../src/components";
+import { SkeletonList } from "../../src/components/SkeletonCard";
 
 export default function FavoritesScreen() {
   const router = useRouter();
@@ -41,6 +38,11 @@ export default function FavoritesScreen() {
     setRefreshing(true);
     loadFavorites();
   };
+
+  const keyExtractor = useCallback(
+    (item: TechnicianWithProfile) => item.$id,
+    [],
+  );
 
   const renderTechnician = useCallback(
     ({ item }: { item: TechnicianWithProfile }) => (
@@ -80,7 +82,7 @@ export default function FavoritesScreen() {
   );
 
   if (loading) {
-    return <LoadingSpinner />;
+    return <SkeletonList count={3} />;
   }
 
   return (
@@ -98,12 +100,13 @@ export default function FavoritesScreen() {
         <FlatList
           data={favorites}
           renderItem={renderTechnician}
-          keyExtractor={(item) => item.$id}
+          keyExtractor={keyExtractor}
           ListHeaderComponent={renderHeader}
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
           removeClippedSubviews
           maxToRenderPerBatch={8}
+          updateCellsBatchingPeriod={50}
           windowSize={5}
           initialNumToRender={6}
           refreshControl={

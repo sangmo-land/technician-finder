@@ -134,7 +134,17 @@ const TechnicianCard: React.FC<TechnicianCardProps> = React.memo(
           >
             {/* Profile Image / Avatar */}
             <View className="relative mr-3.5">
-              {coverImage ? (
+              {technician.avatar ? (
+                <Image
+                  source={{ uri: technician.avatar }}
+                  className={`${
+                    isFeatured
+                      ? "w-14 h-14 rounded-2xl"
+                      : "w-12 h-12 rounded-xl"
+                  }`}
+                  resizeMode="cover"
+                />
+              ) : coverImage ? (
                 <Image
                   source={{ uri: coverImage }}
                   className={`${
@@ -153,19 +163,11 @@ const TechnicianCard: React.FC<TechnicianCardProps> = React.memo(
                   }`}
                   style={{ backgroundColor: "#F1F5F9" }}
                 >
-                  <Text
-                    className={`font-bold ${
-                      isFeatured ? "text-base" : "text-sm"
-                    }`}
-                    style={{ color: skillColor }}
-                  >
-                    {technician.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .substring(0, 2)
-                      .toUpperCase()}
-                  </Text>
+                  <Ionicons
+                    name="person"
+                    size={isFeatured ? 26 : 22}
+                    color="#94A3B8"
+                  />
                 </View>
               )}
               {/* Availability dot */}
@@ -281,10 +283,14 @@ const TechnicianCard: React.FC<TechnicianCardProps> = React.memo(
 
             {/* Experience */}
             <View className="flex-row items-center gap-1 ml-auto">
-              <Ionicons name="briefcase-outline" size={12} color="#94A3B8" />
+              <Ionicons name="calendar-outline" size={12} color="#94A3B8" />
               <Text className="text-[11px] text-text-secondary font-medium">
-                {technician.experienceYears}
-                {t("common.yearsShort")}
+                {technician.createdAt
+                  ? new Date(technician.createdAt).toLocaleDateString(
+                      undefined,
+                      { month: "short", year: "numeric" },
+                    )
+                  : ""}
               </Text>
             </View>
           </View>
@@ -292,6 +298,14 @@ const TechnicianCard: React.FC<TechnicianCardProps> = React.memo(
       </TouchableOpacity>
     );
   },
+  (prevProps, nextProps) =>
+    prevProps.technician.$id === nextProps.technician.$id &&
+    prevProps.technician.availability === nextProps.technician.availability &&
+    prevProps.technician.rating === nextProps.technician.rating &&
+    prevProps.technician.reviewCount === nextProps.technician.reviewCount &&
+    prevProps.technician.avatar === nextProps.technician.avatar &&
+    prevProps.technician.profileViews === nextProps.technician.profileViews &&
+    prevProps.variant === nextProps.variant,
 );
 
 TechnicianCard.displayName = "TechnicianCard";

@@ -6,17 +6,21 @@ import {
   Linking,
   Alert,
   TouchableOpacity,
+  Share,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import * as Haptics from "expo-haptics";
 import { TechnicianWithProfile } from "../../src/types";
 import i18next from "i18next";
 import {
   getTechnicianById,
   toggleFavorite,
   isFavorite as checkFavorite,
+  addToRecentlyViewed,
 } from "../../src/services/storage";
 import { incrementProfileViews } from "../../src/services/appwrite";
 import { skillColors } from "../../src/constants/colors";
@@ -77,6 +81,8 @@ export default function TechnicianDetailsScreen() {
       .catch(() => {});
     // Increment profile views (fire-and-forget)
     incrementProfileViews(id);
+    // Track recently viewed (fire-and-forget)
+    addToRecentlyViewed(id);
     // Only fetch from API if we don't have data from params
     if (initialData) {
       setLoading(false);
@@ -98,6 +104,7 @@ export default function TechnicianDetailsScreen() {
   const handleToggleFavorite = async () => {
     if (!id) return;
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const result = await toggleFavorite(id);
       setIsFav(result);
     } catch (error) {
@@ -142,6 +149,25 @@ export default function TechnicianDetailsScreen() {
     );
   };
 
+  const handleShare = async () => {
+    if (!technician) return;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const skills = technician.skills.map((s) => t(`skills.${s}`)).join(", ");
+      await Share.share({
+        title: t("detail.shareTitle", { name: technician.name }),
+        message: t("detail.shareMessage", {
+          name: technician.name,
+          skills,
+          location: technician.location,
+          phone: technician.phone,
+        }),
+      });
+    } catch (error) {
+      Alert.alert(t("common.error"), t("detail.shareFailed"));
+    }
+  };
+
   if (loading) return <LoadingSpinner />;
 
   if (!technician) {
@@ -179,21 +205,31 @@ export default function TechnicianDetailsScreen() {
             />
           </TouchableOpacity>
 
+          {/* Share button */}
+          <TouchableOpacity
+            className="absolute top-4 left-4 w-10 h-10 rounded-full bg-background items-center justify-center"
+            onPress={handleShare}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="share-outline" size={20} color="#065F46" />
+          </TouchableOpacity>
+
           {/* Avatar */}
           <View className="relative mb-4">
-            <View
-              className="w-24 h-24 rounded-full items-center justify-center shadow-lg"
-              style={{ backgroundColor: color }}
-            >
-              <Text className="text-[32px] font-bold text-surface">
-                {technician.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .substring(0, 2)
-                  .toUpperCase()}
-              </Text>
-            </View>
+            {technician.avatar ? (
+              <Image
+                source={{ uri: technician.avatar }}
+                className="w-24 h-24 rounded-full shadow-lg"
+                style={{ backgroundColor: color }}
+              />
+            ) : (
+              <View
+                className="w-24 h-24 rounded-full items-center justify-center shadow-lg"
+                style={{ backgroundColor: "#E2E8F0" }}
+              >
+                <Ionicons name="person" size={44} color="#94A3B8" />
+              </View>
+            )}
             <View
               className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-[3px] border-surface items-center justify-center"
               style={{ backgroundColor: avail.color }}
@@ -256,6 +292,21 @@ export default function TechnicianDetailsScreen() {
               ({technician.reviewCount ?? 0} {t("common.reviews")})
             </Text>
           </View>
+
+          {/* Member Since */}
+          {technician.createdAt ? (
+            <View className="flex-row items-center gap-1.5 mt-2">
+              <Ionicons name="calendar-outline" size={14} color="#94A3B8" />
+              <Text className="text-xs text-text-muted">
+                {t("detail.memberSince", {
+                  date: new Date(technician.createdAt).toLocaleDateString(
+                    i18next.language === "fr" ? "fr-FR" : "en-US",
+                    { month: "long", year: "numeric" },
+                  ),
+                })}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         {/* Stats Row */}
@@ -362,6 +413,17 @@ export default function TechnicianDetailsScreen() {
             <Ionicons name="logo-whatsapp" size={22} color="#FFFFFF" />
             <Text className="text-lg font-semibold text-surface">
               {t("detail.whatsapp", { name: technician.name.split(" ")[0] })}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="bg-primary rounded-xl py-4 flex-row items-center justify-center gap-3 shadow-lg"
+            onPress={handleShare}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="share-social" size={22} color="#FFFFFF" />
+            <Text className="text-lg font-semibold text-surface">
+              {t("detail.share")}
             </Text>
           </TouchableOpacity>
 

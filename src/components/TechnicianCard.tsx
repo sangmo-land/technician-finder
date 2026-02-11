@@ -201,7 +201,7 @@ const TechnicianCard: React.FC<TechnicianCardProps> = React.memo(
                     className="text-xs font-semibold"
                     style={{ color: skillColor }}
                   >
-                    {technician.skills.map((s) => s).join(", ")}
+                    {technician.skills.map((s) => t(`skills.${s}`)).join(", ")}
                   </Text>
                 </View>
                 <View className="w-[3px] h-[3px] rounded-full bg-border" />

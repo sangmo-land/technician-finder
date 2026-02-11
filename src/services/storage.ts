@@ -170,11 +170,17 @@ export const getFavoriteTechnicians = async (): Promise<
   TechnicianWithProfile[]
 > => {
   try {
-    const [technicians, favoriteIds] = await Promise.all([
-      getAllTechnicians(),
-      getFavorites(),
+    const favoriteIds = await getFavorites();
+    if (favoriteIds.length === 0) return [];
+
+    // Fetch only the favorited technicians instead of all technicians
+    const techs = await appwriteListTechnicians([
+      Query.equal("$id", favoriteIds),
+      Query.limit(favoriteIds.length),
     ]);
-    return technicians.filter((t) => favoriteIds.includes(t.$id));
+
+    const results = await Promise.all(techs.map(joinWithProfile));
+    return results;
   } catch (error) {
     console.error("Error getting favorite technicians:", error);
     return [];

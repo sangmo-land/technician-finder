@@ -324,4 +324,11 @@ export default {
     signUpWithGoogle: "S'inscrire avec Google",
     googleFailed: "Échec de la connexion Google. Veuillez réessayer.",
   },
+
+  // Notifications
+  notifications: {
+    newUserTitle: "Nouvel utilisateur ! \uD83C\uDF89",
+    newUserBody: "{{name}} vient de rejoindre Technician Finder",
+    newUserBodyWithLocation: "{{name}} de {{location}} vient de rejoindre Technician Finder",
+  },
 };

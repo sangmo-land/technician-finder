@@ -36,7 +36,14 @@
           "root": "./app"
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#065F46"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

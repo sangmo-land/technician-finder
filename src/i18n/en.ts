@@ -319,4 +319,11 @@ export default {
     signUpWithGoogle: "Sign up with Google",
     googleFailed: "Google sign-in failed. Please try again.",
   },
+
+  // Notifications
+  notifications: {
+    newUserTitle: "New User Joined! \uD83C\uDF89",
+    newUserBody: "{{name}} just joined Technician Finder",
+    newUserBodyWithLocation: "{{name}} from {{location}} just joined Technician Finder",
+  },
 };

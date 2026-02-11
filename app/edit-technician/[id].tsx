@@ -231,12 +231,16 @@ export default function EditTechnicianScreen() {
             label={t("form.skillTrade")}
             value={
               skills.length > 0
-                ? skills.map((s) => t(`skills.${s}`)).join(", ")
+                ? skills
+                    .map((s) => t(`skills.${s}`, { defaultValue: s }))
+                    .join(", ")
                 : null
             }
-            options={SKILLS.map((s) => t(`skills.${s}`))}
+            options={SKILLS.map((s) => t(`skills.${s}`, { defaultValue: s }))}
             onSelect={(val) => {
-              const match = SKILLS.find((s) => t(`skills.${s}`) === val);
+              const match = SKILLS.find(
+                (s) => t(`skills.${s}`, { defaultValue: s }) === val,
+              );
               if (match && !skills.includes(match)) {
                 setSkills([...skills, match]);
               } else if (match && skills.includes(match)) {

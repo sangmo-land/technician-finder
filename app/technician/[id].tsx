@@ -173,7 +173,9 @@ export default function TechnicianDetailsScreen() {
     if (!technician) return;
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      const skills = technician.skills.map((s) => t(`skills.${s}`)).join(", ");
+      const skills = technician.skills
+        .map((s) => t(`skills.${s}`, { defaultValue: s }))
+        .join(", ");
       await Share.share({
         title: t("detail.shareTitle", { name: technician.name }),
         message: t("detail.shareMessage", {
@@ -385,7 +387,9 @@ export default function TechnicianDetailsScreen() {
                   className="text-sm font-semibold"
                   style={{ color: "#D1FAE5" }}
                 >
-                  {technician.skills.map((s) => t(`skills.${s}`)).join(", ")}
+                  {technician.skills
+                    .map((s) => t(`skills.${s}`, { defaultValue: s }))
+                    .join(", ")}
                 </Text>
               </View>
               <View

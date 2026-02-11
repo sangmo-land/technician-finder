@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 import { AuthProvider, useAuth } from "../src/contexts/AuthContext";
 import SplashScreen from "../src/components/SplashScreen";
+import { loadCustomSkills, getAllSkillDocs } from "../src/services/skills";
 import {
   setupNotifications,
   subscribeToNewUsers,
@@ -110,7 +111,40 @@ export default function RootLayout() {
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-    initI18n().then(() => {
+    initI18n().then(async () => {
+      // Load skills from Appwrite and register their i18n translations
+      await loadCustomSkills();
+      const docs = await getAllSkillDocs();
+      for (const doc of docs) {
+        // Register EN translation (use nameEn as key and display value)
+        i18next.addResource(
+          "en",
+          "translation",
+          `skills.${doc.nameEn}`,
+          doc.nameEn,
+        );
+        i18next.addResource(
+          "en",
+          "translation",
+          `skillShort.${doc.nameEn}`,
+          doc.nameEn,
+        );
+        // Register FR translation (use nameFr if available, else fallback to nameEn)
+        const frLabel = doc.nameFr || doc.nameEn;
+        i18next.addResource(
+          "fr",
+          "translation",
+          `skills.${doc.nameEn}`,
+          frLabel,
+        );
+        i18next.addResource(
+          "fr",
+          "translation",
+          `skillShort.${doc.nameEn}`,
+          frLabel,
+        );
+      }
+
       setI18nReady(true);
       // Hide the native splash once our animated one is rendering
       ExpoSplashScreen.hideAsync().catch(() => {});

@@ -10,3 +10,5 @@ export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as GalleryPicker } from './GalleryPicker';
 export { default as GalleryView } from './GalleryView';
 export { default as SkeletonCard, SkeletonList } from "./SkeletonCard";
+export { SortBar } from "./SortBar";
+

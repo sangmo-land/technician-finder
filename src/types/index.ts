@@ -1,4 +1,4 @@
-export type Skill = 'Plumber' | 'Electrician' | 'Carpenter' | 'Mason' | 'Painter';
+export type Skill = string;
 
 export type Availability = "available" | "busy" | "offline";
 
@@ -72,13 +72,20 @@ export interface TechnicianWithProfile {
   createdAt: string; // ISO date string
 }
 
-export const SKILLS: Skill[] = [
+export const DEFAULT_SKILLS: Skill[] = [
   "Plumber",
   "Electrician",
   "Carpenter",
   "Mason",
   "Painter",
 ];
+
+// Mutable runtime list — initialized to defaults, then merged with custom skills
+export let SKILLS: Skill[] = [...DEFAULT_SKILLS];
+
+export function setSkillsList(skills: Skill[]) {
+  SKILLS = skills;
+}
 
 export const AVAILABILITY_OPTIONS: Availability[] = [
   "available",

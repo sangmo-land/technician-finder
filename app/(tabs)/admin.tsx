@@ -22,12 +22,19 @@ import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import * as Haptics from "expo-haptics";
-import { TechnicianWithProfile } from "../../src/types";
+import { TechnicianWithProfile, DEFAULT_SKILLS, SKILLS } from "../../src/types";
 import {
   getAllTechnicians,
   deleteTechnician,
   resetToSeedData,
 } from "../../src/services/storage";
+import {
+  loadCustomSkills,
+  addCustomSkill,
+  removeCustomSkill,
+  getCustomSkills,
+  getAllSkillDocs,
+} from "../../src/services/skills";
 import {
   listAdmins,
   promoteToAdmin,
@@ -37,8 +44,9 @@ import {
 import { skillColors } from "../../src/constants/colors";
 import { EmptyState, LoadingSpinner } from "../../src/components";
 import { useAuth } from "../../src/contexts/AuthContext";
+import i18next from "i18next";
 
-type AdminTab = "technicians" | "admins";
+type AdminTab = "technicians" | "admins" | "skills";
 
 const availabilityConfig: Record<
   string,
@@ -95,6 +103,13 @@ export default function AdminScreen() {
   const [promoting, setPromoting] = useState(false);
   const [demotingId, setDemotingId] = useState<string | null>(null);
 
+  // ── Skills state ──
+  const [allSkills, setAllSkills] = useState<string[]>([...SKILLS]);
+  const [customSkillsList, setCustomSkillsList] = useState<string[]>([]);
+  const [newSkillEn, setNewSkillEn] = useState("");
+  const [newSkillFr, setNewSkillFr] = useState("");
+  const [addingSkill, setAddingSkill] = useState(false);
+
   // ── Filtered technicians ──
   const filteredTechnicians = useMemo(() => {
     if (!debouncedQuery.trim()) return technicians;
@@ -102,7 +117,9 @@ export default function AdminScreen() {
     return technicians.filter(
       (tech) =>
         tech.name.toLowerCase().includes(q) ||
-        tech.skills.some((s) => t(`skills.${s}`).toLowerCase().includes(q)) ||
+        tech.skills.some((s) =>
+          t(`skills.${s}`, { defaultValue: s }).toLowerCase().includes(q),
+        ) ||
         tech.location.toLowerCase().includes(q),
     );
   }, [technicians, debouncedQuery, t]);
@@ -147,13 +164,46 @@ export default function AdminScreen() {
     }
   }, []);
 
+  const loadSkills = useCallback(async () => {
+    const merged = await loadCustomSkills();
+    setAllSkills(merged);
+    const custom = await getCustomSkills();
+    setCustomSkillsList(custom);
+
+    // Register i18n translations from Appwrite docs
+    const docs = await getAllSkillDocs();
+    for (const doc of docs) {
+      i18next.addResource(
+        "en",
+        "translation",
+        `skills.${doc.nameEn}`,
+        doc.nameEn,
+      );
+      i18next.addResource(
+        "en",
+        "translation",
+        `skillShort.${doc.nameEn}`,
+        doc.nameEn,
+      );
+      const frLabel = doc.nameFr || doc.nameEn;
+      i18next.addResource("fr", "translation", `skills.${doc.nameEn}`, frLabel);
+      i18next.addResource(
+        "fr",
+        "translation",
+        `skillShort.${doc.nameEn}`,
+        frLabel,
+      );
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       if (isAdmin) {
         loadTechnicians();
         loadAdmins();
+        loadSkills();
       }
-    }, [isAdmin, loadTechnicians, loadAdmins]),
+    }, [isAdmin, loadTechnicians, loadAdmins, loadSkills]),
   );
 
   // ── Guard: non-admin users ──
@@ -300,6 +350,65 @@ export default function AdminScreen() {
     );
   };
 
+  // ── Skill handlers ──
+  const handleAddSkill = async () => {
+    const nameEn = newSkillEn.trim();
+    const nameFr = newSkillFr.trim();
+    if (!nameEn) return;
+
+    setAddingSkill(true);
+    try {
+      await addCustomSkill(nameEn, nameFr);
+      // Reload skills to update SKILLS list + i18n translations
+      await loadSkills();
+
+      setNewSkillEn("");
+      setNewSkillFr("");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("✓", t("admin.skillAdded", { name: nameEn }));
+    } catch (error: any) {
+      if (error?.message === "Skill already exists") {
+        Alert.alert(t("common.error"), t("admin.skillExists"));
+      } else {
+        Alert.alert(t("common.error"), error?.message || "Failed to add skill");
+      }
+    } finally {
+      setAddingSkill(false);
+    }
+  };
+
+  const handleDeleteSkill = (skillName: string) => {
+    if (DEFAULT_SKILLS.includes(skillName)) {
+      Alert.alert(t("common.error"), t("admin.cannotDeleteDefault"));
+      return;
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert(
+      t("admin.deleteSkillTitle"),
+      t("admin.deleteSkillMessage", { name: skillName }),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("common.delete"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await removeCustomSkill(skillName);
+              // Reload skills to update SKILLS list + i18n translations
+              await loadSkills();
+              Haptics.notificationAsync(
+                Haptics.NotificationFeedbackType.Success,
+              );
+              Alert.alert("✓", t("admin.skillDeleted", { name: skillName }));
+            } catch (error) {
+              Alert.alert(t("common.error"), "Failed to remove skill");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const keyExtractor = useCallback(
     (item: TechnicianWithProfile) => item.$id,
     [],
@@ -308,7 +417,7 @@ export default function AdminScreen() {
   // ── Technician list renderers ──
   const renderTechnician = useCallback(
     ({ item }: { item: TechnicianWithProfile }) => {
-      const color = skillColors[item.skills[0]];
+      const color = skillColors[item.skills[0]] || "#64748B";
       const avail =
         availabilityConfig[item.availability] || availabilityConfig.offline;
 
@@ -382,7 +491,9 @@ export default function AdminScreen() {
                 style={{ backgroundColor: `${color}15` }}
               >
                 <Text className="text-xs font-semibold" style={{ color }}>
-                  {item.skills.map((s) => t(`skills.${s}`)).join(", ")}
+                  {item.skills
+                    .map((s) => t(`skills.${s}`, { defaultValue: s }))
+                    .join(", ")}
                 </Text>
               </View>
               <View className="flex-row items-center gap-1">
@@ -552,7 +663,7 @@ export default function AdminScreen() {
       style={{ borderWidth: 1, borderColor: "#E2E8F0" }}
     >
       <TouchableOpacity
-        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-lg gap-1.5 ${
+        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-lg gap-1 ${
           activeTab === "technicians" ? "bg-primary" : ""
         }`}
         onPress={() => setActiveTab("technicians")}
@@ -560,18 +671,18 @@ export default function AdminScreen() {
       >
         <Ionicons
           name="construct"
-          size={16}
+          size={15}
           color={activeTab === "technicians" ? "#FFFFFF" : "#64748B"}
         />
         <Text
-          className={`text-sm font-semibold ${
+          className={`text-xs font-semibold ${
             activeTab === "technicians" ? "text-white" : "text-text-secondary"
           }`}
         >
           {t("admin.tabTechnicians")}
         </Text>
         <View
-          className="ml-1 px-1.5 py-0.5 rounded-full"
+          className="ml-0.5 px-1.5 py-0.5 rounded-full"
           style={{
             backgroundColor:
               activeTab === "technicians"
@@ -590,7 +701,7 @@ export default function AdminScreen() {
         </View>
       </TouchableOpacity>
       <TouchableOpacity
-        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-lg gap-1.5 ${
+        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-lg gap-1 ${
           activeTab === "admins" ? "bg-primary" : ""
         }`}
         onPress={() => setActiveTab("admins")}
@@ -598,18 +709,18 @@ export default function AdminScreen() {
       >
         <Ionicons
           name="shield"
-          size={16}
+          size={15}
           color={activeTab === "admins" ? "#FFFFFF" : "#64748B"}
         />
         <Text
-          className={`text-sm font-semibold ${
+          className={`text-xs font-semibold ${
             activeTab === "admins" ? "text-white" : "text-text-secondary"
           }`}
         >
           {t("admin.tabAdmins")}
         </Text>
         <View
-          className="ml-1 px-1.5 py-0.5 rounded-full"
+          className="ml-0.5 px-1.5 py-0.5 rounded-full"
           style={{
             backgroundColor:
               activeTab === "admins" ? "rgba(255,255,255,0.25)" : "#E2E8F0",
@@ -622,6 +733,42 @@ export default function AdminScreen() {
             }}
           >
             {admins.length}
+          </Text>
+        </View>
+      </TouchableOpacity>
+      <TouchableOpacity
+        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-lg gap-1 ${
+          activeTab === "skills" ? "bg-primary" : ""
+        }`}
+        onPress={() => setActiveTab("skills")}
+        activeOpacity={0.8}
+      >
+        <Ionicons
+          name="list"
+          size={15}
+          color={activeTab === "skills" ? "#FFFFFF" : "#64748B"}
+        />
+        <Text
+          className={`text-xs font-semibold ${
+            activeTab === "skills" ? "text-white" : "text-text-secondary"
+          }`}
+        >
+          {t("admin.tabSkills")}
+        </Text>
+        <View
+          className="ml-0.5 px-1.5 py-0.5 rounded-full"
+          style={{
+            backgroundColor:
+              activeTab === "skills" ? "rgba(255,255,255,0.25)" : "#E2E8F0",
+          }}
+        >
+          <Text
+            className="text-[10px] font-bold"
+            style={{
+              color: activeTab === "skills" ? "#FFFFFF" : "#64748B",
+            }}
+          >
+            {allSkills.length}
           </Text>
         </View>
       </TouchableOpacity>
@@ -759,6 +906,156 @@ export default function AdminScreen() {
     </ScrollView>
   );
 
+  // ── Skills management view ──
+  const skillIconMap: Record<string, string> = {
+    Plumber: "water",
+    Electrician: "flash",
+    Carpenter: "hammer",
+    Mason: "cube",
+    Painter: "color-palette",
+  };
+
+  const renderSkillsView = () => (
+    <ScrollView
+      className="flex-1"
+      contentContainerStyle={{ paddingBottom: 120 }}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
+      {/* Add skill card */}
+      <View
+        className="bg-surface mx-4 mt-3 rounded-2xl p-5"
+        style={{ borderWidth: 1, borderColor: "#E2E8F0" }}
+      >
+        <View className="flex-row items-center gap-3 mb-4">
+          <View className="w-10 h-10 rounded-full bg-primary-muted items-center justify-center">
+            <Ionicons name="add-circle" size={20} color="#065F46" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-base font-semibold text-text">
+              {t("admin.addSkill")}
+            </Text>
+            <Text className="text-xs text-text-secondary mt-0.5">
+              {t("admin.skillsDesc")}
+            </Text>
+          </View>
+        </View>
+
+        <View className="gap-2">
+          <TextInput
+            className="bg-background border-[1.5px] border-border rounded-xl px-4 py-2.5 text-sm text-text"
+            value={newSkillEn}
+            onChangeText={setNewSkillEn}
+            placeholder={t("admin.skillNameEn")}
+            placeholderTextColor="#94A3B8"
+            autoCapitalize="words"
+            editable={!addingSkill}
+          />
+          <TextInput
+            className="bg-background border-[1.5px] border-border rounded-xl px-4 py-2.5 text-sm text-text"
+            value={newSkillFr}
+            onChangeText={setNewSkillFr}
+            placeholder={t("admin.skillNameFr")}
+            placeholderTextColor="#94A3B8"
+            autoCapitalize="words"
+            editable={!addingSkill}
+          />
+          <TouchableOpacity
+            className={`bg-primary rounded-xl py-3 flex-row items-center justify-center gap-2 ${
+              addingSkill || !newSkillEn.trim() ? "opacity-50" : ""
+            }`}
+            onPress={handleAddSkill}
+            disabled={addingSkill || !newSkillEn.trim()}
+            activeOpacity={0.8}
+          >
+            {addingSkill ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <Ionicons name="add" size={20} color="#FFFFFF" />
+                <Text className="text-sm font-semibold text-white">
+                  {t("admin.addSkill")}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Current skills */}
+      <Text className="text-xs font-bold text-text-muted uppercase tracking-wider px-6 mt-6 mb-3">
+        {t("admin.currentSkills")} ({allSkills.length})
+      </Text>
+
+      {allSkills.map((skill) => {
+        const isDefault = DEFAULT_SKILLS.includes(skill);
+        const color = skillColors[skill] || "#64748B";
+        const iconName = skillIconMap[skill] || "build";
+
+        return (
+          <View
+            key={skill}
+            className="bg-surface mx-4 mb-2 rounded-xl p-4 flex-row items-center"
+            style={{ borderWidth: 1, borderColor: "#E2E8F0" }}
+          >
+            {/* Color dot + icon */}
+            <View
+              className="w-10 h-10 rounded-full items-center justify-center mr-3"
+              style={{ backgroundColor: `${color}18` }}
+            >
+              <Ionicons name={iconName as any} size={18} color={color} />
+            </View>
+
+            {/* Skill info */}
+            <View className="flex-1">
+              <Text className="text-sm font-semibold text-text">
+                {t(`skills.${skill}`, { defaultValue: skill })}
+              </Text>
+              <View className="flex-row items-center gap-2 mt-0.5">
+                <View
+                  className="px-1.5 py-0.5 rounded"
+                  style={{
+                    backgroundColor: isDefault ? "#DBEAFE" : "#FEF3C7",
+                  }}
+                >
+                  <Text
+                    className="text-[10px] font-medium"
+                    style={{ color: isDefault ? "#1D4ED8" : "#92400E" }}
+                  >
+                    {isDefault
+                      ? t("admin.defaultSkill")
+                      : t("admin.customSkill")}
+                  </Text>
+                </View>
+                <View
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: color }}
+                />
+              </View>
+            </View>
+
+            {/* Delete button — only for custom skills */}
+            {!isDefault ? (
+              <TouchableOpacity
+                className="w-9 h-9 rounded-lg bg-danger-light items-center justify-center"
+                onPress={() => handleDeleteSkill(skill)}
+              >
+                <Ionicons name="trash-outline" size={16} color="#DC2626" />
+              </TouchableOpacity>
+            ) : (
+              <View
+                className="px-2 py-1 rounded-md"
+                style={{ backgroundColor: "#F1F5F9" }}
+              >
+                <Ionicons name="lock-closed" size={14} color="#94A3B8" />
+              </View>
+            )}
+          </View>
+        );
+      })}
+    </ScrollView>
+  );
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -813,8 +1110,10 @@ export default function AdminScreen() {
             />
           )}
         </>
-      ) : (
+      ) : activeTab === "admins" ? (
         renderAdminsView()
+      ) : (
+        renderSkillsView()
       )}
     </View>
   );

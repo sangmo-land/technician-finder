@@ -171,7 +171,7 @@ export default function AddTechnicianScreen() {
             selectedValues={skills}
             options={SKILLS}
             onSelectionChange={setSkills}
-            displayLabel={(s) => t(`skills.${s}`)}
+            displayLabel={(s) => t(`skills.${s}`, { defaultValue: s })}
             placeholder={t("form.selectSkill")}
             error={errors.skills}
             max={3}

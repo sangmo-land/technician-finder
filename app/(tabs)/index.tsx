@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   Image,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -48,6 +49,7 @@ export default function HomeScreen() {
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [selectedSort, setSelectedSort] = useState<SortOption | null>(null);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
   const [recentlyViewed, setRecentlyViewed] = useState<TechnicianWithProfile[]>(
     [],
   );
@@ -96,6 +98,13 @@ export default function HomeScreen() {
       filtered = filtered.filter((t) => t.location === selectedLocation);
     }
 
+    // Price range filter
+    if (priceRange[0] > 0 || priceRange[1] < 50000) {
+      filtered = filtered.filter(
+        (t) => t.hourlyRate >= priceRange[0] && t.hourlyRate <= priceRange[1],
+      );
+    }
+
     if (selectedSort) {
       filtered = [...filtered].sort((a, b) => {
         switch (selectedSort) {
@@ -114,7 +123,14 @@ export default function HomeScreen() {
     }
 
     return filtered;
-  }, [technicians, searchQuery, selectedSkill, selectedLocation, selectedSort]);
+  }, [
+    technicians,
+    searchQuery,
+    selectedSkill,
+    selectedLocation,
+    selectedSort,
+    priceRange,
+  ]);
 
   // Featured expert: highest-rated available technician
   const featuredExpert = useMemo(() => {
@@ -137,9 +153,68 @@ export default function HomeScreen() {
     [technicians],
   );
 
+  // Popular This Week: Top 5 by profile views
+  const popularThisWeek = useMemo(() => {
+    return technicians
+      .filter((t) => (t.profileViews ?? 0) > 0)
+      .sort((a, b) => (b.profileViews ?? 0) - (a.profileViews ?? 0))
+      .slice(0, 5);
+  }, [technicians]);
+
   const greeting = getGreetingKey();
   const hasActiveFilters =
     !!selectedSkill || !!selectedLocation || !!searchQuery.trim();
+
+  // Quick action handlers
+  const handleEmergencyPress = () => {
+    Alert.alert(
+      t("quickActions.emergencyTitle"),
+      t("quickActions.emergencyMessage"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("common.ok"),
+          onPress: () => {
+            // Filter to show only available technicians
+            const available = technicians.filter(
+              (t) => t.availability === "available",
+            );
+            if (available.length > 0) {
+              // Redirect to first available
+              handleTechnicianPress(available[0]);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleSchedulePress = () => {
+    Alert.alert(t("quickActions.scheduleTitle"), "Feature coming soon!");
+  };
+
+  const handleNearestPress = () => {
+    Alert.alert(
+      t("quickActions.nearestTitle"),
+      t("quickActions.nearestMessage"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("common.ok"),
+          onPress: () => {
+            Alert.alert("Info", "Geolocation feature coming soon!");
+          },
+        },
+      ],
+    );
+  };
+
+  const handleTeamPress = () => {
+    Alert.alert(t("quickActions.teamTitle"), t("quickActions.teamMessage"), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("common.ok"), onPress: () => {} },
+    ]);
+  };
 
   // Technicians list excluding the featured one (if no filters active)
   const listTechnicians = useMemo(() => {
@@ -192,6 +267,94 @@ export default function HomeScreen() {
             technician={featuredExpert}
             onPress={() => handleTechnicianPress(featuredExpert)}
             variant="featured"
+          />
+        </View>
+      )}
+
+      {/* Popular This Week */}
+      {!hasActiveFilters && popularThisWeek.length > 0 && (
+        <View className="mt-3">
+          <View className="flex-row items-center gap-2 px-4 mb-2">
+            <Ionicons name="flame" size={16} color="#F59E0B" />
+            <Text className="text-sm font-bold text-text uppercase tracking-wider">
+              {t("home.popularThisWeek")}
+            </Text>
+          </View>
+          <FlatList
+            data={popularThisWeek}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 12 }}
+            keyExtractor={(item) => `popular-${item.$id}`}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                className="mr-3 w-48 bg-surface rounded-xl overflow-hidden shadow-sm"
+                style={{ borderWidth: 1, borderColor: "#FEF3C7" }}
+                onPress={() => handleTechnicianPress(item)}
+                activeOpacity={0.8}
+              >
+                {/* Trending Badge */}
+                <View className="absolute top-2 right-2 z-10">
+                  <View
+                    className="px-2 py-1 rounded-full flex-row items-center gap-1"
+                    style={{ backgroundColor: "rgba(245, 158, 11, 0.9)" }}
+                  >
+                    <Ionicons name="trending-up" size={10} color="#FFFFFF" />
+                    <Text className="text-[9px] font-bold text-white">
+                      {item.profileViews} views
+                    </Text>
+                  </View>
+                </View>
+
+                <View
+                  className="h-20 items-center justify-center"
+                  style={
+                    item.avatar
+                      ? undefined
+                      : {
+                          backgroundColor: `${skillColors[item.skills[0]] || "#6B7280"}20`,
+                        }
+                  }
+                >
+                  {item.avatar ? (
+                    <Image
+                      source={{ uri: item.avatar }}
+                      className="w-full h-full"
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <Ionicons name="person" size={28} color="#94A3B8" />
+                  )}
+                </View>
+                <View className="p-2.5">
+                  <Text
+                    className="text-xs font-semibold text-text"
+                    numberOfLines={1}
+                  >
+                    {item.name}
+                  </Text>
+                  <Text
+                    className="text-[10px] text-text-muted mt-0.5"
+                    numberOfLines={1}
+                  >
+                    {item.skills
+                      .map((s: string) => t(`skills.${s}`, { defaultValue: s }))
+                      .join(", ")}
+                  </Text>
+                  <View className="flex-row items-center justify-between mt-1.5">
+                    <View className="flex-row items-center gap-1">
+                      <Ionicons name="star" size={10} color="#F59E0B" />
+                      <Text className="text-[10px] font-semibold text-text">
+                        {item.rating?.toFixed(1) || "New"}
+                      </Text>
+                    </View>
+                    <Text className="text-[9px] text-text-muted">
+                      {item.location}
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            )}
           />
         </View>
       )}
@@ -400,12 +563,18 @@ export default function HomeScreen() {
 
       {/* Skill Icons + Collapsible Filters */}
       <FilterBar
+        onEmergencyPress={handleEmergencyPress}
+        onSchedulePress={handleSchedulePress}
+        onNearestPress={handleNearestPress}
+        onTeamPress={handleTeamPress}
         selectedSkill={selectedSkill}
         selectedLocation={selectedLocation}
         selectedSort={selectedSort}
+        priceRange={priceRange}
         onSkillChange={setSelectedSkill}
         onLocationChange={setSelectedLocation}
         onSortChange={setSelectedSort}
+        onPriceRangeChange={setPriceRange}
       />
 
       {/* Content */}

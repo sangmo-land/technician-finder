@@ -12,6 +12,7 @@ import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { TechnicianWithProfile } from "../../src/types";
+import i18next from "i18next";
 import {
   getTechnicianById,
   toggleFavorite,
@@ -292,7 +293,9 @@ export default function TechnicianDetailsScreen() {
               {t("detail.about")}
             </Text>
             <Text className="text-base text-text-secondary leading-6">
-              {technician.bio}
+              {i18next.language === "fr" && technician.bioFr
+                ? technician.bioFr
+                : technician.bio}
             </Text>
           </View>
         ) : null}

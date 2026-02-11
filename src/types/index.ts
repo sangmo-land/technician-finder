@@ -27,6 +27,7 @@ export interface Technician {
   skills: Skill[]; // many skills per technician
   experienceYears: number;
   bio: string;
+  bioFr: string;
   hourlyRate: number;
   availability: Availability;
   rating: number;
@@ -52,6 +53,7 @@ export interface TechnicianWithProfile {
   skills: Skill[];
   experienceYears: number;
   bio: string;
+  bioFr: string;
   hourlyRate: number;
   availability: Availability;
   rating: number;

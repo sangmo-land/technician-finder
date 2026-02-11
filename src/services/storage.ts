@@ -41,6 +41,7 @@ async function joinWithProfile(
     skills: tech.skills ?? [],
     experienceYears: tech.experienceYears ?? 0,
     bio: tech.bio ?? "",
+    bioFr: tech.bioFr ?? "",
     hourlyRate: tech.hourlyRate ?? 0,
     availability: tech.availability ?? "offline",
     rating: tech.rating ?? 0,

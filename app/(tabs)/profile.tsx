@@ -13,6 +13,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../src/contexts/AuthContext";
+import { changeLanguage, supportedLanguages } from "../../src/i18n";
 import {
   Skill,
   Availability,
@@ -66,6 +67,7 @@ export default function ProfileScreen() {
     "available",
   );
   const [bio, setBio] = useState("");
+  const [bioFr, setBioFr] = useState("");
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [registering, setRegistering] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -109,7 +111,7 @@ export default function ProfileScreen() {
         onPress: async () => {
           try {
             await signOut();
-            router.replace("/(auth)/sign-in");
+            // Navigation is handled by RootNavigator's auth guard
           } catch {
             Alert.alert(t("common.error"), t("profile.signOutFailed"));
           }
@@ -198,6 +200,7 @@ export default function ProfileScreen() {
         setHourlyRate(String(tech.hourlyRate || ""));
         setAvailability(tech.availability || "available");
         setBio(tech.bio || "");
+        setBioFr(tech.bioFr || "");
         setExistingGalleryIds(tech.gallery || []);
         // Convert existing gallery file IDs to viewable URLs for GalleryPicker
         setGalleryImages(
@@ -260,6 +263,7 @@ export default function ProfileScreen() {
         skills,
         experienceYears: parseInt(experienceYears, 10),
         bio: bio.trim(),
+        bioFr: bioFr.trim(),
         hourlyRate: parseInt(hourlyRate, 10),
         availability: availability!,
         gallery: newGalleryFileIds,
@@ -321,6 +325,7 @@ export default function ProfileScreen() {
         skills,
         experienceYears: parseInt(experienceYears, 10),
         bio: bio.trim(),
+        bioFr: bioFr.trim(),
         hourlyRate: parseInt(hourlyRate, 10),
         availability: availability!,
         gallery: galleryFileIds,
@@ -643,12 +648,21 @@ export default function ProfileScreen() {
                 error={formErrors.availability}
               />
 
-              {/* Bio */}
+              {/* Bio (English) */}
               <InputField
                 label={t("profile.bio")}
                 value={bio}
                 onChangeText={setBio}
                 placeholder={t("profile.bioPlaceholder")}
+                multiline
+              />
+
+              {/* Bio (French) */}
+              <InputField
+                label={t("profile.bioFr")}
+                value={bioFr}
+                onChangeText={setBioFr}
+                placeholder={t("profile.bioFrPlaceholder")}
                 multiline
               />
 
@@ -733,6 +747,38 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        {/* Language Switcher */}
+        <Text className="text-xs font-bold text-text-muted uppercase tracking-wider px-6 mb-3 mt-8">
+          {t("profile.language")}
+        </Text>
+        <View
+          className="bg-surface mx-4 rounded-2xl p-1.5 flex-row"
+          style={{ borderWidth: 1, borderColor: "#E2E8F0" }}
+        >
+          {supportedLanguages.map((lang) => {
+            const isActive = t("profile.currentLanguage") === lang.label;
+            return (
+              <TouchableOpacity
+                key={lang.code}
+                className="flex-1 flex-row items-center justify-center gap-2 rounded-xl py-3"
+                style={{
+                  backgroundColor: isActive ? "#065F46" : "transparent",
+                }}
+                onPress={() => changeLanguage(lang.code)}
+                activeOpacity={0.7}
+              >
+                <Text className="text-lg">{lang.flag}</Text>
+                <Text
+                  className="text-sm font-semibold"
+                  style={{ color: isActive ? "#FFFFFF" : "#64748B" }}
+                >
+                  {lang.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
         {/* App Section */}
         <Text className="text-xs font-bold text-text-muted uppercase tracking-wider px-6 mb-3 mt-8">
           {t("profile.app")}
@@ -741,12 +787,6 @@ export default function ProfileScreen() {
           className="bg-surface mx-4 rounded-2xl"
           style={{ borderWidth: 1, borderColor: "#E2E8F0" }}
         >
-          <ProfileRow
-            icon="language-outline"
-            label={t("profile.language")}
-            value={t("profile.currentLanguage")}
-          />
-          <View className="h-px bg-border mx-4" />
           <ProfileRow
             icon="information-circle-outline"
             label={t("profile.version")}

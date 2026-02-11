@@ -103,15 +103,27 @@ export default function SignUpScreen() {
             right: 16,
             flexDirection: "row",
             alignItems: "center",
-            backgroundColor: "rgba(255,255,255,0.15)",
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderRadius: 20,
+            backgroundColor: "rgba(255,255,255,0.25)",
+            paddingHorizontal: 14,
+            paddingVertical: 8,
+            borderRadius: 24,
+            borderWidth: 1.5,
+            borderColor: "rgba(255,255,255,0.4)",
+            gap: 6,
           }}
         >
-          <Text style={{ fontSize: 16, marginRight: 6 }}>{currentLang.flag}</Text>
-          <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "600" }}>
-            {currentLang.code.toUpperCase()}
+          <Text style={{ fontSize: 18 }}>{currentLang.flag}</Text>
+          <Ionicons name="swap-horizontal" size={16} color="#FFFFFF" />
+          <Text style={{ fontSize: 18 }}>{nextLang.flag}</Text>
+          <Text
+            style={{
+              color: "#FFFFFF",
+              fontSize: 13,
+              fontWeight: "700",
+              marginLeft: 2,
+            }}
+          >
+            {nextLang.label}
           </Text>
         </TouchableOpacity>
         <View

@@ -48,6 +48,7 @@ export default function AddTechnicianScreen() {
   const [location, setLocation] = useState<string | null>(null);
   const [experienceYears, setExperienceYears] = useState("");
   const [bio, setBio] = useState("");
+  const [bioFr, setBioFr] = useState("");
   const [hourlyRate, setHourlyRate] = useState("");
   const [availability, setAvailability] = useState<Availability | null>(
     "available",
@@ -113,6 +114,7 @@ export default function AddTechnicianScreen() {
         skills: skills,
         experienceYears: parseInt(experienceYears, 10),
         bio: bio.trim(),
+        bioFr: bioFr.trim(),
         hourlyRate: parseInt(hourlyRate, 10),
         availability: availability!,
         gallery,
@@ -237,6 +239,14 @@ export default function AddTechnicianScreen() {
             value={bio}
             onChangeText={setBio}
             placeholder={t("form.bioPlaceholder")}
+            multiline
+          />
+
+          <InputField
+            label={t("form.bioLabelFr")}
+            value={bioFr}
+            onChangeText={setBioFr}
+            placeholder={t("form.bioPlaceholderFr")}
             multiline
           />
         </View>

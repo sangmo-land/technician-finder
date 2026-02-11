@@ -72,40 +72,20 @@ export async function signIn(
 export async function signInWithGoogle(): Promise<
   Models.User<Models.Preferences>
 > {
-  const redirectUri = Linking.createURL("/");
-  const response = account.createOAuth2Token(
-    OAuthProvider.Google,
-    redirectUri,
-    redirectUri,
-  );
-
-  // Open the OAuth URL in the browser
-  const browserResult = await WebBrowser.openAuthSessionAsync(
-    (response as any).toString(),
-    redirectUri,
-  );
-
-  if (browserResult.type !== "success" || !browserResult.url) {
-    throw new Error("Google sign-in was cancelled");
-  }
-
-  // Extract the secret & userId from the callback URL
-  const url = new URL(browserResult.url);
-  const secret = url.searchParams.get("secret");
-  const userId = url.searchParams.get("userId");
-
-  if (!secret || !userId) {
-    throw new Error("Missing authentication parameters");
-  }
-
   // Delete any existing anonymous session first
   try {
     await account.deleteSession("current");
   } catch {
     /* no session to delete */
   }
-  // Create session from the OAuth2 token
-  await account.createSession(userId, secret);
+
+  // Use native OAuth session for mobile
+  await account.createOAuth2Session(
+    OAuthProvider.Google,
+    "technician-finder://oauth", // success redirect
+    "technician-finder://oauth", // failure redirect
+  );
+
   return account.get();
 }
 

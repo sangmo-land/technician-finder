@@ -52,6 +52,9 @@ export default function ProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [existingGalleryIds, setExistingGalleryIds] = useState<string[]>([]);
   const [profileDocId, setProfileDocId] = useState<string | null>(null);
+  const [currentAvailability, setCurrentAvailability] =
+    useState<Availability>("available");
+  const [updatingAvailability, setUpdatingAvailability] = useState(false);
 
   // Registration form state
   const [phone, setPhone] = useState("");
@@ -82,6 +85,9 @@ export default function ProfileScreen() {
           setIsTechnician(!!tech);
           setTechDocId(tech?.$id ?? null);
           setProfileDocId(profile?.$id ?? null);
+          if (tech?.availability) {
+            setCurrentAvailability(tech.availability);
+          }
         }
       } catch {
         if (!cancelled) setIsTechnician(false);
@@ -110,6 +116,19 @@ export default function ProfileScreen() {
         },
       },
     ]);
+  };
+
+  const handleQuickAvailability = async (newStatus: Availability) => {
+    if (!techDocId || newStatus === currentAvailability) return;
+    setUpdatingAvailability(true);
+    try {
+      await updateTechnician(techDocId, { availability: newStatus });
+      setCurrentAvailability(newStatus);
+    } catch {
+      Alert.alert(t("common.error"), t("profile.availabilityFailed"));
+    } finally {
+      setUpdatingAvailability(false);
+    }
   };
 
   const handleDeleteTechnicianProfile = () => {
@@ -419,6 +438,79 @@ export default function ProfileScreen() {
                 </Text>
               </View>
             </View>
+
+            {/* Quick Availability Toggle */}
+            <View className="mb-4">
+              <Text className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                {t("profile.quickAvailability")}
+              </Text>
+              <View className="flex-row gap-2">
+                {AVAILABILITY_OPTIONS.map((status) => {
+                  const isActive = currentAvailability === status;
+                  const colorMap: Record<
+                    Availability,
+                    {
+                      bg: string;
+                      activeBg: string;
+                      text: string;
+                      activeText: string;
+                      icon: string;
+                    }
+                  > = {
+                    available: {
+                      bg: "#F0FDF4",
+                      activeBg: "#059669",
+                      text: "#059669",
+                      activeText: "#FFFFFF",
+                      icon: "checkmark-circle",
+                    },
+                    busy: {
+                      bg: "#FFF7ED",
+                      activeBg: "#D97706",
+                      text: "#D97706",
+                      activeText: "#FFFFFF",
+                      icon: "time",
+                    },
+                    offline: {
+                      bg: "#F1F5F9",
+                      activeBg: "#64748B",
+                      text: "#64748B",
+                      activeText: "#FFFFFF",
+                      icon: "moon",
+                    },
+                  };
+                  const c = colorMap[status];
+                  return (
+                    <TouchableOpacity
+                      key={status}
+                      className="flex-1 flex-row items-center justify-center rounded-xl py-2.5 gap-1.5"
+                      style={{
+                        backgroundColor: isActive ? c.activeBg : c.bg,
+                        borderWidth: isActive ? 0 : 1,
+                        borderColor: isActive ? "transparent" : c.bg,
+                        opacity: updatingAvailability ? 0.6 : 1,
+                      }}
+                      onPress={() => handleQuickAvailability(status)}
+                      disabled={updatingAvailability}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons
+                        name={c.icon as any}
+                        size={14}
+                        color={isActive ? c.activeText : c.text}
+                      />
+                      <Text
+                        className="text-xs font-semibold"
+                        style={{ color: isActive ? c.activeText : c.text }}
+                      >
+                        {t(`availability.${status}`)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
             {techDocId && (
               <View style={{ gap: 10 }}>
                 <TouchableOpacity

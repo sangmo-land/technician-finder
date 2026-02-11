@@ -93,26 +93,44 @@ export function subscribeToNewUsers(
     unsubscribe();
   }
 
+  // Guard: skip if env vars are missing to avoid broken websocket loops
+  if (!DATABASE_ID || !USERS_COLLECTION_ID) {
+    console.log(
+      "Notifications: skipping realtime – DATABASE_ID or USERS_COLLECTION_ID not set",
+    );
+    return () => {};
+  }
+
+  // No point subscribing in Expo Go – notifications can't fire anyway
+  if (isExpoGo) {
+    return () => {};
+  }
+
   const channel = `databases.${DATABASE_ID}.collections.${USERS_COLLECTION_ID}.documents`;
 
-  unsubscribe = client.subscribe(channel, (response) => {
-    // Only react to newly-created documents
-    const events = response.events ?? [];
-    const isCreate = events.some((e: string) =>
-      e.includes(".documents.*.create"),
-    );
-    if (!isCreate) return;
+  try {
+    unsubscribe = client.subscribe(channel, (response) => {
+      // Only react to newly-created documents
+      const events = response.events ?? [];
+      const isCreate = events.some((e: string) =>
+        e.includes(".documents.*.create"),
+      );
+      if (!isCreate) return;
 
-    const payload = response.payload as any;
-    const name: string = payload?.name ?? "Someone";
-    const location: string = payload?.location ?? "";
-    const userId: string = payload?.userId ?? "";
+      const payload = response.payload as any;
+      const name: string = payload?.name ?? "Someone";
+      const location: string = payload?.location ?? "";
+      const userId: string = payload?.userId ?? "";
 
-    // Don't notify for the user's own registration
-    if (currentUserId && userId === currentUserId) return;
+      // Don't notify for the user's own registration
+      if (currentUserId && userId === currentUserId) return;
 
-    onNewUser(name, location);
-  });
+      onNewUser(name, location);
+    });
+  } catch (error) {
+    console.log("Notifications: realtime subscription failed –", error);
+    unsubscribe = null;
+  }
 
   return () => {
     if (unsubscribe) {

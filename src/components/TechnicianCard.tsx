@@ -271,6 +271,14 @@ const TechnicianCard: React.FC<TechnicianCardProps> = React.memo(
               </Text>
             </View>
 
+            {/* Profile Views */}
+            <View className="flex-row items-center gap-1">
+              <Ionicons name="eye-outline" size={12} color="#94A3B8" />
+              <Text className="text-[11px] text-text-secondary font-medium">
+                {technician.profileViews ?? 0}
+              </Text>
+            </View>
+
             {/* Experience */}
             <View className="flex-row items-center gap-1 ml-auto">
               <Ionicons name="briefcase-outline" size={12} color="#94A3B8" />

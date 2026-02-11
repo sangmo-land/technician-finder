@@ -204,6 +204,26 @@ export async function updateTechnician(
   )) as unknown as Technician;
 }
 
+export async function incrementProfileViews(documentId: string): Promise<void> {
+  try {
+    const doc = await databases.getDocument(
+      DATABASE_ID,
+      TECHNICIANS_COLLECTION_ID,
+      documentId,
+    );
+    const currentViews = (doc as any).profileViews ?? 0;
+    await databases.updateDocument(
+      DATABASE_ID,
+      TECHNICIANS_COLLECTION_ID,
+      documentId,
+      { profileViews: currentViews + 1 },
+    );
+  } catch (error) {
+    // Silently fail — views are non-critical
+    console.log("Failed to increment profile views:", error);
+  }
+}
+
 export async function deleteTechnician(documentId: string): Promise<void> {
   await databases.deleteDocument(
     DATABASE_ID,

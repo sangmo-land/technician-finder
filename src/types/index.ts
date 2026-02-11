@@ -32,12 +32,13 @@ export interface Technician {
   rating: number;
   reviewCount: number;
   jobsCompleted: number;
+  profileViews: number;
   gallery: string[]; // Appwrite Storage file IDs
 }
 
 export type TechnicianFormData = Omit<
   Technician,
-  "$id" | "rating" | "reviewCount" | "jobsCompleted"
+  "$id" | "rating" | "reviewCount" | "jobsCompleted" | "profileViews"
 >;
 
 // ── Combined view for UI (joins UserProfile + Technician) ──
@@ -56,6 +57,7 @@ export interface TechnicianWithProfile {
   rating: number;
   reviewCount: number;
   jobsCompleted: number;
+  profileViews: number;
   gallery: string[]; // Appwrite Storage file IDs
 }
 

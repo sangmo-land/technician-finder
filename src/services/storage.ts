@@ -46,6 +46,7 @@ async function joinWithProfile(
     rating: tech.rating ?? 0,
     reviewCount: tech.reviewCount ?? 0,
     jobsCompleted: tech.jobsCompleted ?? 0,
+    profileViews: tech.profileViews ?? 0,
     gallery: resolveGallery(tech.gallery ?? []),
   };
 }

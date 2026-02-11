@@ -104,6 +104,7 @@ export default {
   // Technician card
   card: {
     topRated: "Mieux noté",
+    views: "vues",
   },
 
   // Technician detail screen
@@ -124,6 +125,11 @@ export default {
     cannotCallMessage:
       "Les appels téléphoniques ne sont pas pris en charge sur cet appareil.",
     failedCall: "Impossible d'ouvrir l'application téléphone.",
+    whatsapp: "WhatsApp {{name}}",
+    whatsappGreeting:
+      "Bonjour {{name}}, j'ai trouvé votre profil sur Technician Finder et j'aimerais discuter d'un travail.",
+    whatsappFailed:
+      "Impossible d'ouvrir WhatsApp. Assurez-vous qu'il est installé.",
   },
 
   // Admin screen
@@ -307,6 +313,9 @@ export default {
     deleteTechSuccess: "Profil supprimé",
     deleteTechSuccessMsg: "Votre profil technicien a été supprimé.",
     deleteTechFailed: "Échec de la suppression. Veuillez réessayer.",
+    quickAvailability: "Disponibilité",
+    availabilityFailed:
+      "Échec de la mise à jour de la disponibilité. Veuillez réessayer.",
   },
 
   // Auth

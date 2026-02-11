@@ -17,6 +17,7 @@ import {
   toggleFavorite,
   isFavorite as checkFavorite,
 } from "../../src/services/storage";
+import { incrementProfileViews } from "../../src/services/appwrite";
 import { skillColors } from "../../src/constants/colors";
 import { LoadingSpinner, EmptyState, GalleryView } from "../../src/components";
 
@@ -73,6 +74,8 @@ export default function TechnicianDetailsScreen() {
     checkFavorite(id)
       .then(setIsFav)
       .catch(() => {});
+    // Increment profile views (fire-and-forget)
+    incrementProfileViews(id);
     // Only fetch from API if we don't have data from params
     if (initialData) {
       setLoading(false);
@@ -118,6 +121,24 @@ export default function TechnicianDetailsScreen() {
         }
       })
       .catch(() => Alert.alert(t("common.error"), t("detail.failedCall")));
+  };
+
+  const handleWhatsApp = () => {
+    if (!technician) return;
+    const phoneNumber = technician.phone.replace(/[\s\-()]/g, "");
+    // Remove leading 0 and ensure country code
+    const normalized = phoneNumber.startsWith("+")
+      ? phoneNumber.replace("+", "")
+      : phoneNumber.startsWith("00")
+        ? phoneNumber.slice(2)
+        : `237${phoneNumber.replace(/^0/, "")}`;
+    const message = encodeURIComponent(
+      t("detail.whatsappGreeting", { name: technician.name.split(" ")[0] }),
+    );
+    const url = `https://wa.me/${normalized}?text=${message}`;
+    Linking.openURL(url).catch(() =>
+      Alert.alert(t("common.error"), t("detail.whatsappFailed")),
+    );
   };
 
   if (loading) return <LoadingSpinner />;
@@ -326,6 +347,18 @@ export default function TechnicianDetailsScreen() {
             <Ionicons name="call" size={22} color="#FFFFFF" />
             <Text className="text-lg font-semibold text-surface">
               {t("detail.call", { name: technician.name.split(" ")[0] })}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="rounded-xl py-4 flex-row items-center justify-center gap-3 shadow-lg"
+            style={{ backgroundColor: "#25D366" }}
+            onPress={handleWhatsApp}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="logo-whatsapp" size={22} color="#FFFFFF" />
+            <Text className="text-lg font-semibold text-surface">
+              {t("detail.whatsapp", { name: technician.name.split(" ")[0] })}
             </Text>
           </TouchableOpacity>
 

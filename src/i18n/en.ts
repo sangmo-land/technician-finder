@@ -104,6 +104,7 @@ export default {
   // Technician card
   card: {
     topRated: "Top Rated",
+    views: "views",
   },
 
   // Technician detail screen
@@ -123,6 +124,10 @@ export default {
     cannotCallTitle: "Cannot Make Call",
     cannotCallMessage: "Phone calling is not supported on this device.",
     failedCall: "Failed to open phone app.",
+    whatsapp: "WhatsApp {{name}}",
+    whatsappGreeting:
+      "Hi {{name}}, I found your profile on Technician Finder and I'd like to discuss a job.",
+    whatsappFailed: "Could not open WhatsApp. Make sure it is installed.",
   },
 
   // Admin screen
@@ -302,6 +307,8 @@ export default {
     deleteTechSuccess: "Profile Deleted",
     deleteTechSuccessMsg: "Your technician profile has been removed.",
     deleteTechFailed: "Failed to delete profile. Please try again.",
+    quickAvailability: "Availability",
+    availabilityFailed: "Failed to update availability. Please try again.",
   },
 
   // Auth

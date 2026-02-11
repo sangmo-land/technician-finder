@@ -137,6 +137,11 @@ export default {
       "{{name}} - {{skills}}\n📍 {{location}}\n📞 {{phone}}\n\nFound on Technician Finder",
     shareFailed: "Could not share this profile.",
     memberSince: "Member since {{date}}",
+    profileViews: "Views",
+    readMore: "Read more",
+    readLess: "Read less",
+    hireNow: "Hire Now",
+    verified: "Verified Pro",
   },
 
   // Admin screen

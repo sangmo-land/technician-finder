@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,11 +8,15 @@ import {
   TouchableOpacity,
   Share,
   Image,
+  Animated,
+  Dimensions,
+  Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { TechnicianWithProfile } from "../../src/types";
 import i18next from "i18next";
@@ -50,12 +54,24 @@ const availabilityConfig: Record<
   },
 };
 
+const skillIcons: Record<string, string> = {
+  Plumber: "water",
+  Electrician: "flash",
+  Carpenter: "hammer",
+  Mason: "construct",
+  Painter: "color-palette",
+};
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
 export default function TechnicianDetailsScreen() {
   const { id, data: dataParam } = useLocalSearchParams<{
     id: string;
     data?: string;
   }>();
   const { t } = useTranslation();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   // Try to hydrate from route params first (instant) → fall back to API
   const initialData = React.useMemo(() => {
@@ -72,6 +88,8 @@ export default function TechnicianDetailsScreen() {
   );
   const [loading, setLoading] = useState(!initialData);
   const [isFav, setIsFav] = useState(false);
+  const [bioExpanded, setBioExpanded] = useState(false);
+  const scrollY = React.useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!id) return;
@@ -183,185 +201,339 @@ export default function TechnicianDetailsScreen() {
   const color = skillColors[technician.skills[0]];
   const avail =
     availabilityConfig[technician.availability] || availabilityConfig.offline;
+  const skillIcon = skillIcons[technician.skills[0]] || "build";
+  const rating = technician.rating ?? 0;
+  const reviewCount = technician.reviewCount ?? 0;
+  const bio =
+    i18next.language === "fr" && technician.bioFr
+      ? technician.bioFr
+      : technician.bio;
+  const isBioLong = bio && bio.length > 120;
+
+  // Animated header opacity
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 120],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom"]}>
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 40 }}
+    <View className="flex-1 bg-background">
+      {/* Animated mini header (appears on scroll) */}
+      <Animated.View
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10,
+          opacity: headerOpacity,
+          paddingTop: insets.top,
+        }}
       >
-        {/* Profile Header Card */}
-        <View className="bg-surface mx-4 mt-4 rounded-2xl p-6 items-center shadow-md">
-          {/* Favorite button */}
-          <TouchableOpacity
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-background items-center justify-center"
-            onPress={handleToggleFavorite}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={isFav ? "heart" : "heart-outline"}
-              size={22}
-              color={isFav ? "#EF4444" : "#94A3B8"}
-            />
-          </TouchableOpacity>
+        <LinearGradient
+          colors={["#022C22", "#065F46"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{ paddingBottom: 12, paddingTop: 8 }}
+        >
+          <View className="flex-row items-center px-4">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="w-9 h-9 rounded-full items-center justify-center mr-3"
+              style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text
+              className="text-base font-semibold text-white flex-1"
+              numberOfLines={1}
+            >
+              {technician.name}
+            </Text>
+          </View>
+        </LinearGradient>
+      </Animated.View>
 
-          {/* Share button */}
-          <TouchableOpacity
-            className="absolute top-4 left-4 w-10 h-10 rounded-full bg-background items-center justify-center"
-            onPress={handleShare}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="share-outline" size={20} color="#065F46" />
-          </TouchableOpacity>
-
-          {/* Avatar */}
-          <View className="relative mb-4">
-            {technician.avatar ? (
-              <Image
-                source={{ uri: technician.avatar }}
-                className="w-24 h-24 rounded-full shadow-lg"
-                style={{ backgroundColor: color }}
-              />
-            ) : (
-              <View
-                className="w-24 h-24 rounded-full items-center justify-center shadow-lg"
-                style={{ backgroundColor: "#E2E8F0" }}
+      <Animated.ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true },
+        )}
+        scrollEventThrottle={16}
+      >
+        {/* ── Gradient Profile Header ── */}
+        <LinearGradient
+          colors={["#022C22", "#065F46", "#047857"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ paddingTop: insets.top + 8, paddingBottom: 40 }}
+          className="px-5"
+        >
+          {/* Top row: Back + Share + Favorite */}
+          <View className="flex-row items-center justify-between mb-5">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="w-10 h-10 rounded-full items-center justify-center"
+              style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+            <View className="flex-row gap-2">
+              <TouchableOpacity
+                onPress={handleShare}
+                className="w-10 h-10 rounded-full items-center justify-center"
+                style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+                activeOpacity={0.7}
               >
-                <Ionicons name="person" size={44} color="#94A3B8" />
+                <Ionicons name="share-outline" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleToggleFavorite}
+                className="w-10 h-10 rounded-full items-center justify-center"
+                style={{
+                  backgroundColor: isFav
+                    ? "rgba(239,68,68,0.25)"
+                    : "rgba(255,255,255,0.15)",
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={isFav ? "heart" : "heart-outline"}
+                  size={22}
+                  color={isFav ? "#FCA5A5" : "#FFFFFF"}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Avatar + Name */}
+          <View className="items-center">
+            <View className="relative mb-4">
+              {technician.avatar ? (
+                <Image
+                  source={{ uri: technician.avatar }}
+                  className="w-28 h-28 rounded-full"
+                  style={{
+                    borderWidth: 4,
+                    borderColor: "rgba(255,255,255,0.25)",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                  }}
+                />
+              ) : (
+                <View
+                  className="w-28 h-28 rounded-full items-center justify-center"
+                  style={{
+                    borderWidth: 4,
+                    borderColor: "rgba(255,255,255,0.25)",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                  }}
+                >
+                  <Ionicons
+                    name="person"
+                    size={50}
+                    color="rgba(255,255,255,0.6)"
+                  />
+                </View>
+              )}
+              {/* Availability badge on avatar */}
+              <View
+                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full border-[3px] items-center justify-center"
+                style={{
+                  backgroundColor: avail.color,
+                  borderColor: "#065F46",
+                }}
+              >
+                <Ionicons name={avail.icon as any} size={14} color="#FFFFFF" />
               </View>
-            )}
-            <View
-              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-[3px] border-surface items-center justify-center"
-              style={{ backgroundColor: avail.color }}
-            >
-              <Ionicons name={avail.icon as any} size={12} color="#FFFFFF" />
             </View>
-          </View>
 
-          <Text className="text-2xl font-semibold text-text mb-2 text-center">
-            {technician.name}
-          </Text>
+            <Text className="text-2xl font-bold text-white mb-1 text-center">
+              {technician.name}
+            </Text>
 
-          {/* Skill badge + Availability */}
-          <View className="flex-row items-center gap-2 mb-3">
-            <View
-              className="flex-row items-center px-3 py-1.5 rounded-full gap-1.5"
-              style={{ backgroundColor: `${color}20` }}
-            >
+            {/* Skill badge with icon */}
+            <View className="flex-row items-center gap-2 mb-3">
               <View
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: color }}
-              />
-              <Text className="text-sm font-semibold" style={{ color }}>
-                {technician.skills.map((s) => t(`skills.${s}`)).join(", ")}
-              </Text>
-            </View>
-            <View
-              className="flex-row items-center px-3 py-1.5 rounded-full gap-1.5"
-              style={{ backgroundColor: avail.bg }}
-            >
-              <Text
-                className="text-sm font-medium"
-                style={{ color: avail.color }}
+                className="flex-row items-center px-3.5 py-1.5 rounded-full gap-1.5"
+                style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
               >
-                {t(avail.labelKey)}
+                <Ionicons name={skillIcon as any} size={14} color="#D1FAE5" />
+                <Text
+                  className="text-sm font-semibold"
+                  style={{ color: "#D1FAE5" }}
+                >
+                  {technician.skills.map((s) => t(`skills.${s}`)).join(", ")}
+                </Text>
+              </View>
+              <View
+                className="flex-row items-center px-3 py-1.5 rounded-full gap-1.5"
+                style={{ backgroundColor: `${avail.color}30` }}
+              >
+                <Text
+                  className="text-sm font-medium"
+                  style={{ color: "#FFFFFF" }}
+                >
+                  {t(avail.labelKey)}
+                </Text>
+              </View>
+            </View>
+
+            {/* Star rating */}
+            <View className="flex-row items-center gap-1 mb-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Ionicons
+                  key={star}
+                  name={star <= Math.round(rating) ? "star" : "star-outline"}
+                  size={18}
+                  color="#FDE68A"
+                />
+              ))}
+              <Text className="text-base font-bold text-white ml-1.5">
+                {rating > 0 ? rating.toFixed(1) : t("common.new")}
+              </Text>
+              <Text
+                className="text-sm ml-0.5"
+                style={{ color: "rgba(255,255,255,0.6)" }}
+              >
+                ({reviewCount} {t("common.reviews")})
               </Text>
             </View>
-          </View>
 
-          {/* Rating */}
-          <View className="flex-row items-center gap-1.5 mb-1">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Ionicons
-                key={star}
-                name={
-                  star <= Math.round(technician.rating ?? 0)
-                    ? "star"
-                    : "star-outline"
-                }
-                size={20}
-                color="#F59E0B"
-              />
-            ))}
-            <Text className="text-base font-semibold text-text ml-1">
-              {(technician.rating ?? 0) > 0
-                ? technician.rating.toFixed(1)
-                : t("common.new")}
-            </Text>
-            <Text className="text-sm text-text-muted">
-              ({technician.reviewCount ?? 0} {t("common.reviews")})
-            </Text>
+            {/* Member Since */}
+            {technician.createdAt ? (
+              <View className="flex-row items-center gap-1.5 mt-1">
+                <Ionicons
+                  name="calendar-outline"
+                  size={12}
+                  color="rgba(255,255,255,0.5)"
+                />
+                <Text
+                  className="text-xs"
+                  style={{ color: "rgba(255,255,255,0.5)" }}
+                >
+                  {t("detail.memberSince", {
+                    date: new Date(technician.createdAt).toLocaleDateString(
+                      i18next.language === "fr" ? "fr-FR" : "en-US",
+                      { month: "long", year: "numeric" },
+                    ),
+                  })}
+                </Text>
+              </View>
+            ) : null}
           </View>
+        </LinearGradient>
 
-          {/* Member Since */}
-          {technician.createdAt ? (
-            <View className="flex-row items-center gap-1.5 mt-2">
-              <Ionicons name="calendar-outline" size={14} color="#94A3B8" />
-              <Text className="text-xs text-text-muted">
-                {t("detail.memberSince", {
-                  date: new Date(technician.createdAt).toLocaleDateString(
-                    i18next.language === "fr" ? "fr-FR" : "en-US",
-                    { month: "long", year: "numeric" },
-                  ),
-                })}
+        {/* ── Stats Row (overlapping the gradient) ── */}
+        <View className="flex-row mx-4 gap-2" style={{ marginTop: -20 }}>
+          {[
+            {
+              value: technician.experienceYears,
+              label: t("detail.yearsExp"),
+              icon: "briefcase-outline" as const,
+            },
+            {
+              value: technician.jobsCompleted ?? 0,
+              label: t("detail.jobsDone"),
+              icon: "checkmark-done-outline" as const,
+            },
+            {
+              value: (technician.hourlyRate ?? 0).toLocaleString(),
+              label: t("common.xafPerHour"),
+              icon: "cash-outline" as const,
+            },
+            {
+              value: technician.profileViews ?? 0,
+              label: t("detail.profileViews"),
+              icon: "eye-outline" as const,
+            },
+          ].map((stat, i) => (
+            <View
+              key={i}
+              className="flex-1 bg-surface rounded-xl py-3.5 items-center"
+              style={{
+                ...Platform.select({
+                  ios: {
+                    shadowColor: "#0F172A",
+                    shadowOffset: { width: 0, height: 3 },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 8,
+                  },
+                  android: { elevation: 3 },
+                }),
+              }}
+            >
+              <Ionicons name={stat.icon} size={16} color="#065F46" />
+              <Text className="text-lg font-bold text-text mt-1">
+                {stat.value}
+              </Text>
+              <Text className="text-[10px] font-medium text-text-muted mt-0.5">
+                {stat.label}
               </Text>
             </View>
-          ) : null}
+          ))}
         </View>
 
-        {/* Stats Row */}
-        <View className="flex-row mx-4 mt-3 gap-3">
-          <View className="flex-1 bg-surface rounded-xl py-4 items-center shadow-sm">
-            <Text className="text-xl font-bold text-primary">
-              {technician.experienceYears}
-            </Text>
-            <Text className="text-xs font-medium text-text-muted mt-0.5">
-              {t("detail.yearsExp")}
-            </Text>
-          </View>
-          <View className="flex-1 bg-surface rounded-xl py-4 items-center shadow-sm">
-            <Text className="text-xl font-bold text-primary">
-              {technician.jobsCompleted ?? 0}
-            </Text>
-            <Text className="text-xs font-medium text-text-muted mt-0.5">
-              {t("detail.jobsDone")}
-            </Text>
-          </View>
-          <View className="flex-1 bg-surface rounded-xl py-4 items-center shadow-sm">
-            <Text className="text-xl font-bold text-primary">
-              {(technician.hourlyRate ?? 0).toLocaleString()}
-            </Text>
-            <Text className="text-xs font-medium text-text-muted mt-0.5">
-              {t("common.xafPerHour")}
-            </Text>
-          </View>
-        </View>
-
-        {/* Bio */}
-        {technician.bio ? (
+        {/* ── Bio ── */}
+        {bio ? (
           <View className="bg-surface mx-4 mt-3 rounded-2xl p-5 shadow-sm">
-            <Text className="text-xs font-medium text-text-muted uppercase mb-3 tracking-widest">
-              {t("detail.about")}
+            <View className="flex-row items-center gap-2 mb-3">
+              <Ionicons
+                name="person-circle-outline"
+                size={18}
+                color="#065F46"
+              />
+              <Text className="text-xs font-medium text-text-muted uppercase tracking-widest">
+                {t("detail.about")}
+              </Text>
+            </View>
+            <Text
+              className="text-base text-text-secondary leading-6"
+              numberOfLines={bioExpanded || !isBioLong ? undefined : 3}
+            >
+              {bio}
             </Text>
-            <Text className="text-base text-text-secondary leading-6">
-              {i18next.language === "fr" && technician.bioFr
-                ? technician.bioFr
-                : technician.bio}
-            </Text>
+            {isBioLong ? (
+              <TouchableOpacity
+                onPress={() => setBioExpanded(!bioExpanded)}
+                className="mt-2"
+                activeOpacity={0.7}
+              >
+                <Text className="text-sm font-semibold text-primary">
+                  {bioExpanded ? t("detail.readLess") : t("detail.readMore")}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         ) : null}
 
-        {/* Work Gallery */}
+        {/* ── Work Gallery ── */}
         <GalleryView images={technician.gallery || []} />
 
-        {/* Contact Info */}
+        {/* ── Contact Info ── */}
         <View className="bg-surface mx-4 mt-3 rounded-2xl p-5 shadow-sm">
-          <Text className="text-xs font-medium text-text-muted uppercase mb-4 tracking-widest">
-            {t("detail.contactInfo")}
-          </Text>
+          <View className="flex-row items-center gap-2 mb-4">
+            <Ionicons name="call-outline" size={18} color="#065F46" />
+            <Text className="text-xs font-medium text-text-muted uppercase tracking-widest">
+              {t("detail.contactInfo")}
+            </Text>
+          </View>
 
-          <View className="flex-row items-center py-2">
-            <View className="w-11 h-11 rounded-lg items-center justify-center mr-4 bg-primary-muted">
+          <TouchableOpacity
+            className="flex-row items-center py-2.5"
+            onPress={() =>
+              Linking.openURL(
+                `geo:0,0?q=${encodeURIComponent(technician.location + ", Cameroon")}`,
+              ).catch(() => {})
+            }
+            activeOpacity={0.7}
+          >
+            <View className="w-11 h-11 rounded-xl items-center justify-center mr-4 bg-primary-muted">
               <Ionicons name="location" size={20} color="#065F46" />
             </View>
             <View className="flex-1">
@@ -372,12 +544,17 @@ export default function TechnicianDetailsScreen() {
                 {technician.location}, {t("common.cameroon")}
               </Text>
             </View>
-          </View>
+            <Ionicons name="chevron-forward" size={16} color="#CBD5E1" />
+          </TouchableOpacity>
 
-          <View className="h-px bg-border-light my-3" />
+          <View className="h-px bg-border-light my-2" />
 
-          <View className="flex-row items-center py-2">
-            <View className="w-11 h-11 rounded-lg items-center justify-center mr-4 bg-success-light">
+          <TouchableOpacity
+            className="flex-row items-center py-2.5"
+            onPress={handleCall}
+            activeOpacity={0.7}
+          >
+            <View className="w-11 h-11 rounded-xl items-center justify-center mr-4 bg-success-light">
               <Ionicons name="call" size={20} color="#059669" />
             </View>
             <View className="flex-1">
@@ -388,61 +565,36 @@ export default function TechnicianDetailsScreen() {
                 {technician.phone}
               </Text>
             </View>
-          </View>
+            <Ionicons name="chevron-forward" size={16} color="#CBD5E1" />
+          </TouchableOpacity>
         </View>
 
-        {/* Action Buttons */}
-        <View className="mx-4 mt-4 gap-3">
+        {/* ── Share + Favorite Row ── */}
+        <View className="flex-row mx-4 mt-3 gap-3">
           <TouchableOpacity
-            className="bg-success rounded-xl py-4 flex-row items-center justify-center gap-3 shadow-lg"
-            onPress={handleCall}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="call" size={22} color="#FFFFFF" />
-            <Text className="text-lg font-semibold text-surface">
-              {t("detail.call", { name: technician.name.split(" ")[0] })}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="rounded-xl py-4 flex-row items-center justify-center gap-3 shadow-lg"
-            style={{ backgroundColor: "#25D366" }}
-            onPress={handleWhatsApp}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="logo-whatsapp" size={22} color="#FFFFFF" />
-            <Text className="text-lg font-semibold text-surface">
-              {t("detail.whatsapp", { name: technician.name.split(" ")[0] })}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="bg-primary rounded-xl py-4 flex-row items-center justify-center gap-3 shadow-lg"
+            className="flex-1 bg-surface rounded-xl py-3.5 flex-row items-center justify-center gap-2 shadow-sm"
             onPress={handleShare}
             activeOpacity={0.8}
           >
-            <Ionicons name="share-social" size={22} color="#FFFFFF" />
-            <Text className="text-lg font-semibold text-surface">
+            <Ionicons name="share-social-outline" size={20} color="#065F46" />
+            <Text className="text-sm font-semibold text-primary">
               {t("detail.share")}
             </Text>
           </TouchableOpacity>
-
           <TouchableOpacity
-            className={`rounded-xl py-4 flex-row items-center justify-center gap-3 border-2 ${
-              isFav
-                ? "bg-danger-light border-danger"
-                : "bg-surface border-border"
+            className={`flex-1 rounded-xl py-3.5 flex-row items-center justify-center gap-2 shadow-sm ${
+              isFav ? "bg-danger-light" : "bg-surface"
             }`}
             onPress={handleToggleFavorite}
             activeOpacity={0.8}
           >
             <Ionicons
               name={isFav ? "heart" : "heart-outline"}
-              size={22}
-              color={isFav ? "#DC2626" : "#475569"}
+              size={20}
+              color={isFav ? "#DC2626" : "#94A3B8"}
             />
             <Text
-              className={`text-lg font-semibold ${isFav ? "text-danger" : "text-text-secondary"}`}
+              className={`text-sm font-semibold ${isFav ? "text-danger" : "text-text-muted"}`}
             >
               {isFav
                 ? t("detail.removeFromFavorites")
@@ -450,7 +602,47 @@ export default function TechnicianDetailsScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </Animated.ScrollView>
+
+      {/* ── Sticky Bottom CTA Bar ── */}
+      <View
+        className="bg-surface border-t px-4 flex-row gap-3"
+        style={{
+          borderColor: "#F1F5F9",
+          paddingTop: 12,
+          paddingBottom: insets.bottom + 12,
+          ...Platform.select({
+            ios: {
+              shadowColor: "#0F172A",
+              shadowOffset: { width: 0, height: -4 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+            },
+            android: { elevation: 8 },
+          }),
+        }}
+      >
+        <TouchableOpacity
+          className="flex-1 bg-success rounded-xl py-3.5 flex-row items-center justify-center gap-2"
+          onPress={handleCall}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="call" size={20} color="#FFFFFF" />
+          <Text className="text-base font-semibold text-white">
+            {t("detail.call", { name: technician.name.split(" ")[0] })}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          className="flex-1 rounded-xl py-3.5 flex-row items-center justify-center gap-2"
+          style={{ backgroundColor: "#25D366" }}
+          onPress={handleWhatsApp}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="logo-whatsapp" size={20} color="#FFFFFF" />
+          <Text className="text-base font-semibold text-white">WhatsApp</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }

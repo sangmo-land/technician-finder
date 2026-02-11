@@ -1,4 +1,10 @@
-import React, { useState, useCallback } from "react";
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  useEffect,
+} from "react";
 import {
   View,
   Text,
@@ -9,11 +15,13 @@ import {
   TextInput,
   ActivityIndicator,
   ScrollView,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import * as Haptics from "expo-haptics";
 import { TechnicianWithProfile } from "../../src/types";
 import {
   getAllTechnicians,
@@ -32,6 +40,27 @@ import { useAuth } from "../../src/contexts/AuthContext";
 
 type AdminTab = "technicians" | "admins";
 
+const availabilityConfig: Record<
+  string,
+  { labelKey: string; color: string; icon: string }
+> = {
+  available: {
+    labelKey: "availability.available",
+    color: "#059669",
+    icon: "checkmark-circle",
+  },
+  busy: {
+    labelKey: "availability.busy",
+    color: "#D97706",
+    icon: "time",
+  },
+  offline: {
+    labelKey: "availability.offline",
+    color: "#94A3B8",
+    icon: "moon",
+  },
+};
+
 export default function AdminScreen() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -44,6 +73,20 @@ export default function AdminScreen() {
   const [technicians, setTechnicians] = useState<TechnicianWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounce search input by 300ms
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 300);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, [searchQuery]);
 
   // ── Admins state ──
   const [admins, setAdmins] = useState<AdminUser[]>([]);
@@ -51,6 +94,33 @@ export default function AdminScreen() {
   const [promoteEmail, setPromoteEmail] = useState("");
   const [promoting, setPromoting] = useState(false);
   const [demotingId, setDemotingId] = useState<string | null>(null);
+
+  // ── Filtered technicians ──
+  const filteredTechnicians = useMemo(() => {
+    if (!debouncedQuery.trim()) return technicians;
+    const q = debouncedQuery.toLowerCase().trim();
+    return technicians.filter(
+      (tech) =>
+        tech.name.toLowerCase().includes(q) ||
+        tech.skills.some((s) => t(`skills.${s}`).toLowerCase().includes(q)) ||
+        tech.location.toLowerCase().includes(q),
+    );
+  }, [technicians, debouncedQuery, t]);
+
+  // ── Stats ──
+  const stats = useMemo(() => {
+    const available = technicians.filter(
+      (t) => t.availability === "available",
+    ).length;
+    const busy = technicians.filter((t) => t.availability === "busy").length;
+    const offline = technicians.length - available - busy;
+    const ratings = technicians.map((t) => t.rating ?? 0).filter((r) => r > 0);
+    const avgRating =
+      ratings.length > 0
+        ? ratings.reduce((a, b) => a + b, 0) / ratings.length
+        : 0;
+    return { available, busy, offline, avgRating };
+  }, [technicians]);
 
   // ── Data loading ──
   const loadTechnicians = useCallback(async () => {
@@ -120,6 +190,7 @@ export default function AdminScreen() {
 
   const handleDelete = useCallback(
     (technician: TechnicianWithProfile) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       Alert.alert(
         t("admin.deleteTitle"),
         t("admin.deleteMessage", { name: technician.name }),
@@ -131,6 +202,13 @@ export default function AdminScreen() {
             onPress: async () => {
               try {
                 await deleteTechnician(technician.$id);
+                Haptics.notificationAsync(
+                  Haptics.NotificationFeedbackType.Success,
+                );
+                Alert.alert(
+                  "✓",
+                  t("admin.deleteSuccess", { name: technician.name }),
+                );
                 loadTechnicians();
               } catch (error) {
                 Alert.alert(t("common.error"), t("admin.deleteFailed"));
@@ -144,14 +222,17 @@ export default function AdminScreen() {
   );
 
   const handleReset = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     Alert.alert(t("admin.resetTitle"), t("admin.resetMessage"), [
       { text: t("common.cancel"), style: "cancel" },
       {
-        text: t("common.reset"),
+        text: t("admin.resetConfirm"),
         style: "destructive",
         onPress: async () => {
           try {
             await resetToSeedData();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Alert.alert("✓", t("admin.resetSuccess"));
             loadTechnicians();
           } catch (error) {
             Alert.alert(t("common.error"), t("admin.resetFailed"));
@@ -171,7 +252,8 @@ export default function AdminScreen() {
       await promoteToAdmin(email);
       setPromoteEmail("");
       await loadAdmins();
-      Alert.alert(t("admin.promoteSuccess"), email);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("✓", t("admin.promoteSuccess"));
     } catch (error: any) {
       Alert.alert(
         t("common.error"),
@@ -201,6 +283,9 @@ export default function AdminScreen() {
             try {
               await demoteFromAdmin(admin.$id);
               await loadAdmins();
+              Haptics.notificationAsync(
+                Haptics.NotificationFeedbackType.Success,
+              );
             } catch (error: any) {
               Alert.alert(
                 t("common.error"),
@@ -224,25 +309,76 @@ export default function AdminScreen() {
   const renderTechnician = useCallback(
     ({ item }: { item: TechnicianWithProfile }) => {
       const color = skillColors[item.skills[0]];
+      const avail =
+        availabilityConfig[item.availability] || availabilityConfig.offline;
 
       return (
-        <View className="bg-surface mx-4 mb-3 rounded-xl p-4 flex-row items-center shadow-sm">
-          <View className="flex-1">
-            <View className="flex-row items-center mb-2">
-              <View
-                className="w-2 h-2 rounded-full mr-2"
-                style={{ backgroundColor: color }}
+        <TouchableOpacity
+          className="bg-surface mx-4 mb-3 rounded-xl p-4 flex-row items-center shadow-sm"
+          onPress={() =>
+            router.push({
+              pathname: "/technician/[id]",
+              params: { id: item.$id, data: JSON.stringify(item) },
+            })
+          }
+          onLongPress={() => handleDelete(item)}
+          delayLongPress={600}
+          activeOpacity={0.7}
+        >
+          {/* Avatar + availability dot */}
+          <View className="relative mr-3">
+            {item.avatar ? (
+              <Image
+                source={{ uri: item.avatar }}
+                className="w-11 h-11 rounded-full"
+                style={{ backgroundColor: "#F1F5F9" }}
               />
+            ) : (
+              <View
+                className="w-11 h-11 rounded-full items-center justify-center"
+                style={{ backgroundColor: "#F1F5F9" }}
+              >
+                <Ionicons name="person" size={20} color="#94A3B8" />
+              </View>
+            )}
+            <View
+              className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full"
+              style={{
+                backgroundColor: avail.color,
+                borderWidth: 2,
+                borderColor: "#FFFFFF",
+              }}
+            />
+          </View>
+
+          {/* Info */}
+          <View className="flex-1">
+            <View className="flex-row items-center mb-1.5">
               <Text
-                className="text-base font-medium text-text flex-1"
+                className="text-base font-semibold text-text flex-1"
                 numberOfLines={1}
               >
                 {item.name}
               </Text>
+              <View
+                className="flex-row items-center px-2 py-0.5 rounded-full ml-2"
+                style={{ backgroundColor: `${avail.color}18` }}
+              >
+                <View
+                  className="w-1.5 h-1.5 rounded-full mr-1"
+                  style={{ backgroundColor: avail.color }}
+                />
+                <Text
+                  className="text-[10px] font-semibold"
+                  style={{ color: avail.color }}
+                >
+                  {t(avail.labelKey)}
+                </Text>
+              </View>
             </View>
             <View className="flex-row items-center gap-3 flex-wrap">
               <View
-                className="px-2 py-1 rounded-md"
+                className="px-2 py-0.5 rounded-md"
                 style={{ backgroundColor: `${color}15` }}
               >
                 <Text className="text-xs font-semibold" style={{ color }}>
@@ -250,41 +386,38 @@ export default function AdminScreen() {
                 </Text>
               </View>
               <View className="flex-row items-center gap-1">
-                <Ionicons name="location-outline" size={12} color="#94A3B8" />
-                <Text className="text-sm text-text-secondary">
+                <Ionicons name="location-outline" size={11} color="#94A3B8" />
+                <Text className="text-xs text-text-secondary">
                   {item.location}
                 </Text>
               </View>
               <View className="flex-row items-center gap-1">
-                <Ionicons name="star" size={12} color="#F59E0B" />
-                <Text className="text-sm text-text-secondary">
+                <Ionicons name="star" size={11} color="#F59E0B" />
+                <Text className="text-xs text-text-secondary">
                   {(item.rating ?? 0) > 0
                     ? item.rating.toFixed(1)
                     : t("common.new")}
                 </Text>
               </View>
-              <Text className="text-sm font-medium text-primary">
-                {(item.hourlyRate ?? 0).toLocaleString()}{" "}
-                {t("common.xafPerHour")}
-              </Text>
             </View>
           </View>
 
-          <View className="flex-row gap-2 ml-3">
+          {/* Action buttons */}
+          <View className="flex-row gap-1.5 ml-2">
             <TouchableOpacity
-              className="w-10 h-10 rounded-lg bg-primary-muted items-center justify-center"
+              className="w-9 h-9 rounded-lg bg-primary-muted items-center justify-center"
               onPress={() => router.push(`/edit-technician/${item.$id}`)}
             >
-              <Ionicons name="pencil" size={18} color="#065F46" />
+              <Ionicons name="pencil" size={16} color="#065F46" />
             </TouchableOpacity>
             <TouchableOpacity
-              className="w-10 h-10 rounded-lg bg-danger-light items-center justify-center"
+              className="w-9 h-9 rounded-lg bg-danger-light items-center justify-center"
               onPress={() => handleDelete(item)}
             >
-              <Ionicons name="trash-outline" size={18} color="#DC2626" />
+              <Ionicons name="trash-outline" size={16} color="#DC2626" />
             </TouchableOpacity>
           </View>
-        </View>
+        </TouchableOpacity>
       );
     },
     [router, t, handleDelete],
@@ -292,8 +425,9 @@ export default function AdminScreen() {
 
   const renderTechnicianHeader = () => (
     <View className="px-4 pt-2 pb-3 gap-3">
+      {/* Title card */}
       <View className="bg-surface rounded-2xl p-5 shadow-md">
-        <View className="flex-row justify-between items-center">
+        <View className="flex-row justify-between items-center mb-4">
           <View>
             <Text className="text-xl font-semibold text-text">
               {t("admin.title")}
@@ -306,8 +440,57 @@ export default function AdminScreen() {
             <Ionicons name="people" size={28} color="#065F46" />
           </View>
         </View>
+
+        {/* Stats row */}
+        <View className="flex-row gap-2">
+          <View
+            className="flex-1 rounded-xl py-2.5 items-center"
+            style={{ backgroundColor: "#D1FAE520" }}
+          >
+            <Text className="text-lg font-bold" style={{ color: "#059669" }}>
+              {stats.available}
+            </Text>
+            <Text className="text-[10px] font-medium text-text-muted">
+              {t("availability.available")}
+            </Text>
+          </View>
+          <View
+            className="flex-1 rounded-xl py-2.5 items-center"
+            style={{ backgroundColor: "#FEF3C720" }}
+          >
+            <Text className="text-lg font-bold" style={{ color: "#D97706" }}>
+              {stats.busy}
+            </Text>
+            <Text className="text-[10px] font-medium text-text-muted">
+              {t("availability.busy")}
+            </Text>
+          </View>
+          <View
+            className="flex-1 rounded-xl py-2.5 items-center"
+            style={{ backgroundColor: "#F1F5F940" }}
+          >
+            <Text className="text-lg font-bold" style={{ color: "#94A3B8" }}>
+              {stats.offline}
+            </Text>
+            <Text className="text-[10px] font-medium text-text-muted">
+              {t("availability.offline")}
+            </Text>
+          </View>
+          <View
+            className="flex-1 rounded-xl py-2.5 items-center"
+            style={{ backgroundColor: "#FEF3C720" }}
+          >
+            <Text className="text-lg font-bold" style={{ color: "#F59E0B" }}>
+              {stats.avgRating > 0 ? stats.avgRating.toFixed(1) : "—"}
+            </Text>
+            <Text className="text-[10px] font-medium text-text-muted">
+              {t("admin.avgRating")}
+            </Text>
+          </View>
+        </View>
       </View>
 
+      {/* Action row */}
       <View className="flex-row gap-3">
         <TouchableOpacity
           className="flex-1 flex-row items-center justify-center bg-primary rounded-xl py-3 gap-2 shadow-sm"
@@ -320,12 +503,45 @@ export default function AdminScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          className="w-12 h-12 rounded-xl bg-surface items-center justify-center border-[1.5px] border-primary"
+          className="flex-row items-center justify-center rounded-xl py-3 px-4 gap-2 bg-surface border-[1.5px] border-danger"
           onPress={handleReset}
+          activeOpacity={0.7}
         >
-          <Ionicons name="refresh" size={20} color="#065F46" />
+          <Ionicons name="refresh" size={18} color="#DC2626" />
+          <Text className="text-sm font-semibold" style={{ color: "#DC2626" }}>
+            {t("common.reset")}
+          </Text>
         </TouchableOpacity>
       </View>
+    </View>
+  );
+
+  const renderSearchBar = () => (
+    <View className="px-4 pb-2 gap-1.5">
+      <View
+        className="flex-row items-center bg-surface rounded-xl px-4 py-2.5"
+        style={{ borderWidth: 1, borderColor: "#E2E8F0" }}
+      >
+        <Ionicons name="search" size={18} color="#94A3B8" />
+        <TextInput
+          className="flex-1 ml-2.5 text-sm text-text"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder={t("admin.searchPlaceholder")}
+          placeholderTextColor="#94A3B8"
+          autoCapitalize="none"
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery("")}>
+            <Ionicons name="close-circle" size={18} color="#94A3B8" />
+          </TouchableOpacity>
+        )}
+      </View>
+      {searchQuery.trim().length > 0 && (
+        <Text className="text-xs text-text-muted px-1">
+          {t("admin.searchResults", { count: filteredTechnicians.length })}
+        </Text>
+      )}
     </View>
   );
 
@@ -354,6 +570,24 @@ export default function AdminScreen() {
         >
           {t("admin.tabTechnicians")}
         </Text>
+        <View
+          className="ml-1 px-1.5 py-0.5 rounded-full"
+          style={{
+            backgroundColor:
+              activeTab === "technicians"
+                ? "rgba(255,255,255,0.25)"
+                : "#E2E8F0",
+          }}
+        >
+          <Text
+            className="text-[10px] font-bold"
+            style={{
+              color: activeTab === "technicians" ? "#FFFFFF" : "#64748B",
+            }}
+          >
+            {technicians.length}
+          </Text>
+        </View>
       </TouchableOpacity>
       <TouchableOpacity
         className={`flex-1 flex-row items-center justify-center py-2.5 rounded-lg gap-1.5 ${
@@ -374,6 +608,22 @@ export default function AdminScreen() {
         >
           {t("admin.tabAdmins")}
         </Text>
+        <View
+          className="ml-1 px-1.5 py-0.5 rounded-full"
+          style={{
+            backgroundColor:
+              activeTab === "admins" ? "rgba(255,255,255,0.25)" : "#E2E8F0",
+          }}
+        >
+          <Text
+            className="text-[10px] font-bold"
+            style={{
+              color: activeTab === "admins" ? "#FFFFFF" : "#64748B",
+            }}
+          >
+            {admins.length}
+          </Text>
+        </View>
       </TouchableOpacity>
     </View>
   );
@@ -518,38 +768,51 @@ export default function AdminScreen() {
       {renderSegmentControl()}
 
       {activeTab === "technicians" ? (
-        technicians.length === 0 ? (
-          <View style={{ flex: 1, paddingBottom: 100 }}>
-            {renderTechnicianHeader()}
-            <EmptyState
-              icon="📋"
-              title={t("admin.noTechniciansTitle")}
-              message={t("admin.noTechniciansMessage")}
-            />
-          </View>
-        ) : (
-          <FlatList
-            data={technicians}
-            renderItem={renderTechnician}
-            keyExtractor={keyExtractor}
-            ListHeaderComponent={renderTechnicianHeader}
-            contentContainerStyle={{ paddingBottom: 100 }}
-            showsVerticalScrollIndicator={false}
-            removeClippedSubviews
-            maxToRenderPerBatch={8}
-            updateCellsBatchingPeriod={50}
-            windowSize={5}
-            initialNumToRender={6}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-                colors={["#065F46"]}
-                tintColor="#065F46"
+        <>
+          {renderSearchBar()}
+          {filteredTechnicians.length === 0 && technicians.length === 0 ? (
+            <View style={{ flex: 1, paddingBottom: 100 }}>
+              {renderTechnicianHeader()}
+              <EmptyState
+                icon="📋"
+                title={t("admin.noTechniciansTitle")}
+                message={t("admin.noTechniciansMessage")}
               />
-            }
-          />
-        )
+            </View>
+          ) : (
+            <FlatList
+              data={filteredTechnicians}
+              renderItem={renderTechnician}
+              keyExtractor={keyExtractor}
+              ListHeaderComponent={renderTechnicianHeader}
+              ListEmptyComponent={
+                searchQuery.trim().length > 0 ? (
+                  <EmptyState
+                    icon="🔍"
+                    title={t("admin.noSearchResults")}
+                    message={t("admin.noSearchResultsMessage")}
+                  />
+                ) : null
+              }
+              contentContainerStyle={{ paddingBottom: 100 }}
+              showsVerticalScrollIndicator={false}
+              removeClippedSubviews={false}
+              maxToRenderPerBatch={8}
+              updateCellsBatchingPeriod={50}
+              windowSize={5}
+              initialNumToRender={6}
+              keyboardShouldPersistTaps="handled"
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  colors={["#065F46"]}
+                  tintColor="#065F46"
+                />
+              }
+            />
+          )}
+        </>
       ) : (
         renderAdminsView()
       )}

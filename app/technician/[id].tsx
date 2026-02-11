@@ -11,6 +11,7 @@ import {
   Animated,
   Dimensions,
   Platform,
+  Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -89,6 +90,7 @@ export default function TechnicianDetailsScreen() {
   const [loading, setLoading] = useState(!initialData);
   const [isFav, setIsFav] = useState(false);
   const [bioExpanded, setBioExpanded] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
   const scrollY = React.useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -218,7 +220,7 @@ export default function TechnicianDetailsScreen() {
   });
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1" style={{ backgroundColor: "#022C22" }}>
       {/* Animated mini header (appears on scroll) */}
       <Animated.View
         style={{
@@ -258,6 +260,7 @@ export default function TechnicianDetailsScreen() {
 
       <Animated.ScrollView
         className="flex-1"
+        style={{ backgroundColor: "#F8FAFC" }}
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event(
@@ -314,7 +317,12 @@ export default function TechnicianDetailsScreen() {
 
           {/* Avatar + Name */}
           <View className="items-center">
-            <View className="relative mb-4">
+            <TouchableOpacity
+              className="relative mb-4"
+              activeOpacity={0.85}
+              onPress={() => technician.avatar && setShowAvatarModal(true)}
+              disabled={!technician.avatar}
+            >
               {technician.avatar ? (
                 <Image
                   source={{ uri: technician.avatar }}
@@ -351,7 +359,16 @@ export default function TechnicianDetailsScreen() {
               >
                 <Ionicons name={avail.icon as any} size={14} color="#FFFFFF" />
               </View>
-            </View>
+              {/* Expand hint */}
+              {technician.avatar ? (
+                <View
+                  className="absolute top-0 right-0 w-7 h-7 rounded-full items-center justify-center"
+                  style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+                >
+                  <Ionicons name="expand-outline" size={14} color="#FFFFFF" />
+                </View>
+              ) : null}
+            </TouchableOpacity>
 
             <Text className="text-2xl font-bold text-white mb-1 text-center">
               {technician.name}
@@ -643,6 +660,53 @@ export default function TechnicianDetailsScreen() {
           <Text className="text-base font-semibold text-white">WhatsApp</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Fullscreen Avatar Modal */}
+      {technician.avatar ? (
+        <Modal
+          visible={showAvatarModal}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          onRequestClose={() => setShowAvatarModal(false)}
+        >
+          <TouchableOpacity
+            className="flex-1 items-center justify-center"
+            style={{ backgroundColor: "rgba(0,0,0,0.92)" }}
+            activeOpacity={1}
+            onPress={() => setShowAvatarModal(false)}
+          >
+            {/* Close button */}
+            <TouchableOpacity
+              className="absolute right-5 w-10 h-10 rounded-full items-center justify-center"
+              style={{
+                top: insets.top + 10,
+                backgroundColor: "rgba(255,255,255,0.15)",
+              }}
+              onPress={() => setShowAvatarModal(false)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+
+            {/* Large avatar */}
+            <Image
+              source={{ uri: technician.avatar }}
+              style={{
+                width: SCREEN_WIDTH - 48,
+                height: SCREEN_WIDTH - 48,
+                borderRadius: (SCREEN_WIDTH - 48) / 2,
+              }}
+              resizeMode="cover"
+            />
+
+            {/* Name label */}
+            <Text className="text-white text-lg font-semibold mt-5">
+              {technician.name}
+            </Text>
+          </TouchableOpacity>
+        </Modal>
+      ) : null}
     </View>
   );
 }

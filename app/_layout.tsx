@@ -81,6 +81,7 @@ function RootNavigator() {
         <Stack.Screen
           name="technician/[id]"
           options={{
+            headerShown: false,
             title: t("screens.technicianDetails"),
             presentation: "card",
           }}

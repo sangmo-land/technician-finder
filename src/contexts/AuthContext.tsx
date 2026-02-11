@@ -21,40 +21,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// TODO: DEMO MODE - Remove this flag to re-enable authentication
-const DEMO_MODE = false;
-
-const DEMO_USER = {
-  $id: "demo-user",
-  $createdAt: new Date().toISOString(),
-  $updatedAt: new Date().toISOString(),
-  name: "Demo User",
-  email: "demo@example.com",
-  phone: "",
-  emailVerification: true,
-  phoneVerification: false,
-  status: true,
-  labels: [],
-  prefs: {},
-  accessedAt: new Date().toISOString(),
-  registration: new Date().toISOString(),
-  mfa: false,
-  targets: [],
-  hash: "",
-  hashOptions: {},
-  password: "",
-} as unknown as Models.User<Models.Preferences>;
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<Models.User<Models.Preferences> | null>(
-    DEMO_MODE ? DEMO_USER : null,
+    null,
   );
-  const [isLoading, setIsLoading] = useState(DEMO_MODE ? false : true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!DEMO_MODE) {
-      checkUser();
-    }
+    checkUser();
   }, []);
 
   async function checkUser() {

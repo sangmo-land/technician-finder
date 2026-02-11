@@ -6,6 +6,7 @@ import {
   signUp as appwriteSignUp,
   signOut as appwriteSignOut,
   signInWithGoogle as appwriteGoogleSignIn,
+  createAnonymousSession,
 } from "../services/appwrite";
 
 interface AuthContextType {
@@ -59,7 +60,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function checkUser() {
     try {
       const currentUser = await getCurrentUser();
-      setUser(currentUser);
+      // Treat anonymous sessions as "not logged in" for the UI
+      // Anonymous users have no email and no name set through normal signup
+      if (currentUser && currentUser.email) {
+        setUser(currentUser);
+      } else {
+        setUser(null);
+        // ensureSession() in _layout already created an anonymous session if needed
+      }
     } catch {
       setUser(null);
     } finally {
@@ -80,6 +88,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function handleSignOut() {
     await appwriteSignOut();
     setUser(null);
+    // Re-create anonymous session for guest browsing
+    await createAnonymousSession();
   }
 
   async function handleGoogleSignIn() {

@@ -171,6 +171,15 @@ export default {
     readLess: "Read less",
     hireNow: "Hire Now",
     verified: "Verified Pro",
+    signInToSeePhone: "Sign in to see phone number",
+    signInToCall: "Sign in to call",
+    signInToWhatsApp: "Sign in to WhatsApp",
+    signInToShare: "Sign in to share",
+    signInRequired: "Sign In Required",
+    signInRequiredMessage:
+      "You need to sign in or create an account to access this feature.",
+    signInButton: "Sign In",
+    hiddenPhone: "••••••••••",
   },
 
   // Admin screen
@@ -237,6 +246,9 @@ export default {
     emptyTitle: "No favorites yet",
     emptyMessage:
       "Tap the heart icon on a technician's profile to save them here for quick access.",
+    signInTitle: "Sign in to save favorites",
+    signInMessage:
+      "Create an account or sign in to save your favorite technicians and access them anytime.",
   },
 
   // Add technician form
@@ -321,6 +333,11 @@ export default {
   profile: {
     guest: "Guest",
     account: "Account",
+    signInTitle: "Sign in to your account",
+    signInMessage:
+      "Create an account or sign in to manage your profile, register as a technician, and more.",
+    signInButton: "Sign In",
+    signUpButton: "Create Account",
     name: "Name",
     email: "Email",
     app: "App",

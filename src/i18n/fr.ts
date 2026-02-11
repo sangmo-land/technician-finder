@@ -173,6 +173,15 @@ export default {
     readLess: "Lire moins",
     hireNow: "Embaucher",
     verified: "Pro vérifié",
+    signInToSeePhone: "Connectez-vous pour voir le numéro",
+    signInToCall: "Connectez-vous pour appeler",
+    signInToWhatsApp: "Connectez-vous pour WhatsApp",
+    signInToShare: "Connectez-vous pour partager",
+    signInRequired: "Connexion requise",
+    signInRequiredMessage:
+      "Vous devez vous connecter ou créer un compte pour accéder à cette fonctionnalité.",
+    signInButton: "Se connecter",
+    hiddenPhone: "••••••••••",
   },
 
   // Admin screen
@@ -241,6 +250,9 @@ export default {
     emptyTitle: "Aucun favori",
     emptyMessage:
       "Appuyez sur l'icône cœur sur le profil d'un technicien pour l'enregistrer ici.",
+    signInTitle: "Connectez-vous pour sauvegarder vos favoris",
+    signInMessage:
+      "Créez un compte ou connectez-vous pour sauvegarder vos techniciens favoris et y accéder à tout moment.",
   },
 
   // Add technician form
@@ -327,6 +339,11 @@ export default {
   profile: {
     guest: "Invité",
     account: "Compte",
+    signInTitle: "Connectez-vous à votre compte",
+    signInMessage:
+      "Créez un compte ou connectez-vous pour gérer votre profil, vous inscrire comme technicien, et plus encore.",
+    signInButton: "Se connecter",
+    signUpButton: "Créer un compte",
     name: "Nom",
     email: "Email",
     app: "Application",

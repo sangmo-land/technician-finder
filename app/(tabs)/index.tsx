@@ -19,6 +19,7 @@ import {
   getAllTechnicians,
   initializeStorage,
   getRecentlyViewedTechnicians,
+  getCachedTechnicians,
 } from "../../src/services/storage";
 import {
   TechnicianCard,
@@ -56,6 +57,12 @@ export default function HomeScreen() {
 
   const loadTechnicians = useCallback(async () => {
     try {
+      // Show cached data instantly while fetching fresh data
+      const cached = getCachedTechnicians();
+      if (cached && loading) {
+        setTechnicians(cached);
+        setLoading(false);
+      }
       await initializeStorage();
       const [data, recent] = await Promise.all([
         getAllTechnicians(),
@@ -297,14 +304,23 @@ export default function HomeScreen() {
           <Text className="text-sm font-semibold text-text" numberOfLines={1}>
             {item.name}
           </Text>
-          <Text
-            className="text-xs text-text-secondary mt-0.5"
-            numberOfLines={1}
-          >
-            {item.skills
-              .map((s: string) => t(`skills.${s}`, { defaultValue: s }))
-              .join(", ")}
-          </Text>
+          <View className="flex-row flex-wrap items-center mt-0.5 gap-1">
+            {item.skills.map((s: string, idx: number) => (
+              <React.Fragment key={s}>
+                {idx > 0 && (
+                  <Text className="text-xs" style={{ color: "#CBD5E1" }}>
+                    ·
+                  </Text>
+                )}
+                <Text
+                  className="text-xs font-medium"
+                  style={{ color: skillColors[s] || "#6B7280" }}
+                >
+                  {t(`skills.${s}`, { defaultValue: s })}
+                </Text>
+              </React.Fragment>
+            ))}
+          </View>
           <View className="flex-row items-center justify-between mt-1.5">
             <View className="flex-row items-center gap-1">
               <Ionicons name="star" size={11} color="#F59E0B" />
@@ -352,12 +368,23 @@ export default function HomeScreen() {
           <Text className="text-sm font-semibold text-text" numberOfLines={1}>
             {item.name}
           </Text>
-          <Text
-            className="text-xs text-text-secondary mt-0.5"
-            numberOfLines={1}
-          >
-            {item.skills.map((s: string) => t(`skills.${s}`)).join(", ")}
-          </Text>
+          <View className="flex-row flex-wrap items-center mt-0.5 gap-1">
+            {item.skills.map((s: string, idx: number) => (
+              <React.Fragment key={s}>
+                {idx > 0 && (
+                  <Text className="text-xs" style={{ color: "#CBD5E1" }}>
+                    ·
+                  </Text>
+                )}
+                <Text
+                  className="text-xs font-medium"
+                  style={{ color: skillColors[s] || "#6B7280" }}
+                >
+                  {t(`skills.${s}`, { defaultValue: s })}
+                </Text>
+              </React.Fragment>
+            ))}
+          </View>
           <View className="flex-row items-center gap-1 mt-1">
             <View
               className="w-1.5 h-1.5 rounded-full"

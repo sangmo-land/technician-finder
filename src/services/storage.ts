@@ -8,6 +8,7 @@ import {
   deleteTechnician as appwriteDeleteTechnician,
   createUserProfile,
   getUserProfile,
+  getUserProfiles,
   getGalleryImageUrl,
   Query,
   databases,
@@ -29,9 +30,11 @@ function resolveGallery(fileIds: string[]): string[] {
   return fileIds.map((id) => getGalleryImageUrl(id));
 }
 
-/** Join a technician doc with its user profile */
-async function joinWithProfile(tech: any): Promise<TechnicianWithProfile> {
-  const profile = await getUserProfile(tech.userId);
+/** Build a TechnicianWithProfile from a tech doc + profile (or null) */
+function buildTechnicianWithProfile(
+  tech: any,
+  profile: any,
+): TechnicianWithProfile {
   return {
     $id: tech.$id,
     userId: tech.userId,
@@ -54,6 +57,41 @@ async function joinWithProfile(tech: any): Promise<TechnicianWithProfile> {
   };
 }
 
+/** Join a technician doc with its user profile (single fetch, used for individual lookups) */
+async function joinWithProfile(tech: any): Promise<TechnicianWithProfile> {
+  const profile = await getUserProfile(tech.userId);
+  return buildTechnicianWithProfile(tech, profile);
+}
+
+/** Batch-join technician docs with profiles in a single query */
+async function batchJoinWithProfiles(
+  techs: any[],
+): Promise<TechnicianWithProfile[]> {
+  if (techs.length === 0) return [];
+  const userIds = [...new Set(techs.map((t: any) => t.userId))];
+  const profileMap = await getUserProfiles(userIds);
+  return techs.map((tech: any) =>
+    buildTechnicianWithProfile(tech, profileMap.get(tech.userId) ?? null),
+  );
+}
+
+// ── In-memory cache ──
+let _cachedTechnicians: TechnicianWithProfile[] | null = null;
+let _cacheTimestamp = 0;
+const CACHE_TTL = 60_000; // 1 minute
+
+export function getCachedTechnicians(): TechnicianWithProfile[] | null {
+  if (_cachedTechnicians && Date.now() - _cacheTimestamp < CACHE_TTL) {
+    return _cachedTechnicians;
+  }
+  return null;
+}
+
+export function invalidateTechnicianCache(): void {
+  _cachedTechnicians = null;
+  _cacheTimestamp = 0;
+}
+
 // ── No-op (kept for backward compat — data now lives in Appwrite) ──
 export const initializeStorage = async (): Promise<void> => {};
 
@@ -62,12 +100,15 @@ export const initializeStorage = async (): Promise<void> => {};
 export const getAllTechnicians = async (): Promise<TechnicianWithProfile[]> => {
   try {
     const techs = await appwriteListTechnicians([Query.limit(100)]);
-    // Fetch all user profiles in parallel
-    const results = await Promise.all(techs.map(joinWithProfile));
+    // Batch-fetch all user profiles in a single query (instead of N individual calls)
+    const results = await batchJoinWithProfiles(techs);
+    // Update cache
+    _cachedTechnicians = results;
+    _cacheTimestamp = Date.now();
     return results;
   } catch (error) {
     console.error("Error getting technicians:", error);
-    return [];
+    return _cachedTechnicians ?? [];
   }
 };
 
@@ -208,7 +249,7 @@ export const getRecentlyViewedTechnicians = async (): Promise<
       Query.equal("$id", ids),
       Query.limit(ids.length),
     ]);
-    const results = await Promise.all(techs.map(joinWithProfile));
+    const results = await batchJoinWithProfiles(techs);
     // Preserve order from recently viewed IDs
     const map = new Map(results.map((r) => [r.$id, r]));
     return ids
@@ -233,7 +274,7 @@ export const getFavoriteTechnicians = async (): Promise<
       Query.limit(favoriteIds.length),
     ]);
 
-    const results = await Promise.all(techs.map(joinWithProfile));
+    const results = await batchJoinWithProfiles(techs);
     return results;
   } catch (error) {
     console.error("Error getting favorite technicians:", error);

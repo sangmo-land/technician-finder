@@ -38,13 +38,11 @@ const skillIcons: Record<string, string> = {
 const TechnicianCard: React.FC<TechnicianCardProps> = React.memo(
   ({ technician, onPress, variant = "default" }) => {
     const { t } = useTranslation();
-    const skillColor = skillColors[technician.skills[0]] || "#6B7280";
     const avail =
       availabilityConfig[technician.availability] || availabilityConfig.offline;
     const isFeatured = variant === "featured";
     const rating = technician.rating ?? 0;
     const reviewCount = technician.reviewCount ?? 0;
-    const skillIcon = skillIcons[technician.skills[0]] || "build";
 
     const gallery = technician.gallery ?? [];
     const coverImage = gallery.length > 0 ? gallery[0] : null;
@@ -192,21 +190,29 @@ const TechnicianCard: React.FC<TechnicianCardProps> = React.memo(
                 {technician.name}
               </Text>
 
-              <View className="flex-row items-center mt-1 gap-2">
-                <View className="flex-row items-center gap-1">
-                  <Ionicons
-                    name={skillIcon as any}
-                    size={13}
-                    color={skillColor}
-                  />
-                  <Text
-                    className="text-sm font-semibold"
-                    style={{ color: skillColor }}
-                  >
-                    {technician.skills
-                      .map((s) => t(`skills.${s}`, { defaultValue: s }))
-                      .join(", ")}
-                  </Text>
+              <View className="flex-row items-center mt-1 gap-2 flex-wrap">
+                <View className="flex-row items-center gap-1.5 flex-wrap">
+                  {technician.skills.map((skill, idx) => {
+                    const color = skillColors[skill] || "#6B7280";
+                    const icon = skillIcons[skill] || "build";
+                    return (
+                      <View
+                        key={skill}
+                        className="flex-row items-center gap-0.5"
+                      >
+                        {idx > 0 && (
+                          <View className="w-[3px] h-[3px] rounded-full bg-border mr-1" />
+                        )}
+                        <Ionicons name={icon as any} size={13} color={color} />
+                        <Text
+                          className="text-sm font-semibold"
+                          style={{ color }}
+                        >
+                          {t(`skills.${skill}`, { defaultValue: skill })}
+                        </Text>
+                      </View>
+                    );
+                  })}
                 </View>
                 <View className="w-[3px] h-[3px] rounded-full bg-border" />
                 <View className="flex-row items-center gap-1">

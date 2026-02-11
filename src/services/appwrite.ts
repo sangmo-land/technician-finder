@@ -44,6 +44,12 @@ export async function signUp(
   password: string,
   name: string,
 ): Promise<Models.User<Models.Preferences>> {
+  // Delete any existing anonymous session first
+  try {
+    await account.deleteSession("current");
+  } catch {
+    /* no session to delete */
+  }
   await account.create(ID.unique(), email, password, name);
   await account.createEmailPasswordSession(email, password);
   return account.get();
@@ -53,6 +59,12 @@ export async function signIn(
   email: string,
   password: string,
 ): Promise<Models.User<Models.Preferences>> {
+  // Delete any existing anonymous session first
+  try {
+    await account.deleteSession("current");
+  } catch {
+    /* no session to delete */
+  }
   await account.createEmailPasswordSession(email, password);
   return account.get();
 }
@@ -86,6 +98,12 @@ export async function signInWithGoogle(): Promise<
     throw new Error("Missing authentication parameters");
   }
 
+  // Delete any existing anonymous session first
+  try {
+    await account.deleteSession("current");
+  } catch {
+    /* no session to delete */
+  }
   // Create session from the OAuth2 token
   await account.createSession(userId, secret);
   return account.get();
@@ -100,6 +118,26 @@ export async function getCurrentUser(): Promise<Models.User<Models.Preferences> 
     return await account.get();
   } catch {
     return null;
+  }
+}
+
+export async function createAnonymousSession(): Promise<void> {
+  try {
+    await account.createAnonymousSession();
+  } catch {
+    // Session may already exist
+  }
+}
+
+/**
+ * Ensure some session exists (real or anonymous).
+ * Call before any Appwrite DB reads at startup.
+ */
+export async function ensureSession(): Promise<void> {
+  try {
+    await account.get(); // throws if no session
+  } catch {
+    await createAnonymousSession();
   }
 }
 
@@ -129,6 +167,30 @@ export async function getUserProfile(
   } catch {
     return null;
   }
+}
+
+/** Batch-fetch multiple user profiles in a single query */
+export async function getUserProfiles(
+  userIds: string[],
+): Promise<Map<string, UserProfile>> {
+  const map = new Map<string, UserProfile>();
+  if (userIds.length === 0) return map;
+
+  try {
+    // Appwrite supports Query.equal with an array of values
+    const res = await databases.listDocuments(
+      DATABASE_ID,
+      USERS_COLLECTION_ID,
+      [Query.equal("userId", userIds), Query.limit(100)],
+    );
+    for (const doc of res.documents) {
+      const profile = doc as unknown as UserProfile;
+      map.set(profile.userId, profile);
+    }
+  } catch {
+    // Fallback silently
+  }
+  return map;
 }
 
 export async function updateUserProfile(

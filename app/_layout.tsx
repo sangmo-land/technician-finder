@@ -12,6 +12,7 @@ import i18next from "i18next";
 import { AuthProvider, useAuth } from "../src/contexts/AuthContext";
 import SplashScreen from "../src/components/SplashScreen";
 import { loadCustomSkills, getAllSkillDocs } from "../src/services/skills";
+import { ensureSession } from "../src/services/appwrite";
 import {
   setupNotifications,
   subscribeToNewUsers,
@@ -51,9 +52,15 @@ function RootNavigator() {
 
     const inAuthGroup = segments[0] === "(auth)";
 
-    if (!user && !inAuthGroup) {
-      router.replace("/(auth)/sign-in");
-    } else if (user && inAuthGroup) {
+    if (user && inAuthGroup) {
+      router.replace("/(tabs)");
+    } else if (
+      !user &&
+      !inAuthGroup &&
+      segments[0] !== "(tabs)" &&
+      segments[0] !== "technician"
+    ) {
+      // Allow unauthenticated users to browse tabs and technician details
       router.replace("/(tabs)");
     }
   }, [user, isLoading, segments]);
@@ -76,9 +83,10 @@ function RootNavigator() {
             backgroundColor: colors.background,
           },
         }}
+        initialRouteName="(tabs)"
       >
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen
           name="technician/[id]"
           options={{
@@ -112,41 +120,45 @@ export default function RootLayout() {
 
   useEffect(() => {
     initI18n().then(async () => {
+      // Ensure a session exists before making any Appwrite calls
+      await ensureSession();
+
       // Load skills from Appwrite and register their i18n translations
-      await loadCustomSkills();
-      const docs = await getAllSkillDocs();
-      for (const doc of docs) {
-        // Register EN translation (use nameEn as key and display value)
-        i18next.addResource(
-          "en",
-          "translation",
-          `skills.${doc.nameEn}`,
-          doc.nameEn,
-        );
-        i18next.addResource(
-          "en",
-          "translation",
-          `skillShort.${doc.nameEn}`,
-          doc.nameEn,
-        );
-        // Register FR translation (use nameFr if available, else fallback to nameEn)
-        const frLabel = doc.nameFr || doc.nameEn;
-        i18next.addResource(
-          "fr",
-          "translation",
-          `skills.${doc.nameEn}`,
-          frLabel,
-        );
-        i18next.addResource(
-          "fr",
-          "translation",
-          `skillShort.${doc.nameEn}`,
-          frLabel,
-        );
+      try {
+        await loadCustomSkills();
+        const docs = await getAllSkillDocs();
+        for (const doc of docs) {
+          i18next.addResource(
+            "en",
+            "translation",
+            `skills.${doc.nameEn}`,
+            doc.nameEn,
+          );
+          i18next.addResource(
+            "en",
+            "translation",
+            `skillShort.${doc.nameEn}`,
+            doc.nameEn,
+          );
+          const frLabel = doc.nameFr || doc.nameEn;
+          i18next.addResource(
+            "fr",
+            "translation",
+            `skills.${doc.nameEn}`,
+            frLabel,
+          );
+          i18next.addResource(
+            "fr",
+            "translation",
+            `skillShort.${doc.nameEn}`,
+            frLabel,
+          );
+        }
+      } catch {
+        // Skills will use defaults if Appwrite is unreachable
       }
 
       setI18nReady(true);
-      // Hide the native splash once our animated one is rendering
       ExpoSplashScreen.hideAsync().catch(() => {});
     });
   }, []);

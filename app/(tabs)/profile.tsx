@@ -457,6 +457,47 @@ export default function ProfileScreen() {
       )
     : "";
 
+  // Show sign-in prompt for unauthenticated users
+  if (!user) {
+    return (
+      <View className="flex-1 bg-background items-center justify-center px-6">
+        <View
+          className="bg-surface rounded-3xl p-8 items-center shadow-sm"
+          style={{ maxWidth: 360, width: "100%" }}
+        >
+          <View className="w-20 h-20 rounded-full bg-primary-muted items-center justify-center mb-5">
+            <Ionicons name="person" size={36} color="#065F46" />
+          </View>
+          <Text className="text-xl font-bold text-text text-center mb-2">
+            {t("profile.signInTitle")}
+          </Text>
+          <Text className="text-sm text-text-secondary text-center mb-6 leading-5">
+            {t("profile.signInMessage")}
+          </Text>
+          <TouchableOpacity
+            className="bg-primary rounded-xl py-3.5 px-8 w-full items-center mb-3"
+            onPress={() => router.push("/(auth)/sign-in")}
+            activeOpacity={0.8}
+          >
+            <Text className="text-base font-semibold text-white">
+              {t("profile.signInButton")}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="rounded-xl py-3.5 px-8 w-full items-center"
+            style={{ backgroundColor: "#F1F5F9" }}
+            onPress={() => router.push("/(auth)/sign-up")}
+            activeOpacity={0.8}
+          >
+            <Text className="text-base font-semibold text-primary">
+              {t("profile.signUpButton")}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View className="flex-1" style={{ backgroundColor: "#F8FAFC" }}>
       {/* ── Mini Header (on scroll) ── */}

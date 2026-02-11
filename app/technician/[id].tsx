@@ -21,6 +21,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { TechnicianWithProfile } from "../../src/types";
 import i18next from "i18next";
+import { useAuth } from "../../src/contexts/AuthContext";
 import {
   getTechnicianById,
   toggleFavorite,
@@ -73,6 +74,7 @@ export default function TechnicianDetailsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
 
   // Try to hydrate from route params first (instant) → fall back to API
   const initialData = React.useMemo(() => {
@@ -121,8 +123,22 @@ export default function TechnicianDetailsScreen() {
     load();
   }, [id, initialData]);
 
+  function promptSignIn() {
+    Alert.alert(t("detail.signInRequired"), t("detail.signInRequiredMessage"), [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: t("detail.signInButton"),
+        onPress: () => router.push("/(auth)/sign-in"),
+      },
+    ]);
+  }
+
   const handleToggleFavorite = async () => {
     if (!id) return;
+    if (!user) {
+      promptSignIn();
+      return;
+    }
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const result = await toggleFavorite(id);
@@ -134,6 +150,10 @@ export default function TechnicianDetailsScreen() {
 
   const handleCall = () => {
     if (!technician) return;
+    if (!user) {
+      promptSignIn();
+      return;
+    }
     const phoneNumber = technician.phone.replace(/\s/g, "");
     const url = `tel:${phoneNumber}`;
     Linking.canOpenURL(url)
@@ -153,6 +173,10 @@ export default function TechnicianDetailsScreen() {
 
   const handleWhatsApp = () => {
     if (!technician) return;
+    if (!user) {
+      promptSignIn();
+      return;
+    }
     const phoneNumber = technician.phone.replace(/[\s\-()]/g, "");
     // Remove leading 0 and ensure country code
     const normalized = phoneNumber.startsWith("+")
@@ -171,6 +195,10 @@ export default function TechnicianDetailsScreen() {
 
   const handleShare = async () => {
     if (!technician) return;
+    if (!user) {
+      promptSignIn();
+      return;
+    }
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const skills = technician.skills
@@ -223,23 +251,23 @@ export default function TechnicianDetailsScreen() {
 
   return (
     <View className="flex-1" style={{ backgroundColor: "#022C22" }}>
-      {/* Animated mini header (appears on scroll) */}
+      {/* Animated mini header (appears on scroll — covers status bar) */}
       <Animated.View
+        pointerEvents="none"
         style={{
           position: "absolute",
           top: 0,
           left: 0,
           right: 0,
-          zIndex: 10,
+          zIndex: 20,
           opacity: headerOpacity,
-          paddingTop: insets.top,
         }}
       >
         <LinearGradient
           colors={["#022C22", "#065F46"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          style={{ paddingBottom: 12, paddingTop: 8 }}
+          style={{ paddingTop: insets.top + 8, paddingBottom: 12 }}
         >
           <View className="flex-row items-center px-4">
             <TouchableOpacity
@@ -572,19 +600,29 @@ export default function TechnicianDetailsScreen() {
 
           <TouchableOpacity
             className="flex-row items-center py-2.5"
-            onPress={handleCall}
+            onPress={user ? handleCall : () => promptSignIn()}
             activeOpacity={0.7}
           >
             <View className="w-11 h-11 rounded-xl items-center justify-center mr-4 bg-success-light">
-              <Ionicons name="call" size={20} color="#059669" />
+              <Ionicons
+                name={user ? "call" : "lock-closed"}
+                size={20}
+                color={user ? "#059669" : "#94A3B8"}
+              />
             </View>
             <View className="flex-1">
               <Text className="text-xs font-medium text-text-muted mb-0.5">
                 {t("detail.phoneNumber")}
               </Text>
-              <Text className="text-base font-medium text-text">
-                {technician.phone}
-              </Text>
+              {user ? (
+                <Text className="text-base font-medium text-text">
+                  {technician.phone}
+                </Text>
+              ) : (
+                <Text className="text-sm font-medium text-text-muted">
+                  {t("detail.signInToSeePhone")}
+                </Text>
+              )}
             </View>
             <Ionicons name="chevron-forward" size={16} color="#CBD5E1" />
           </TouchableOpacity>
@@ -644,24 +682,37 @@ export default function TechnicianDetailsScreen() {
         }}
       >
         <TouchableOpacity
-          className="flex-1 bg-success rounded-xl py-3.5 flex-row items-center justify-center gap-2"
-          onPress={handleCall}
+          className="flex-1 rounded-xl py-3.5 flex-row items-center justify-center gap-2"
+          style={{ backgroundColor: user ? "#059669" : "#94A3B8" }}
+          onPress={user ? handleCall : () => promptSignIn()}
           activeOpacity={0.8}
         >
-          <Ionicons name="call" size={20} color="#FFFFFF" />
+          <Ionicons
+            name={user ? "call" : "lock-closed"}
+            size={20}
+            color="#FFFFFF"
+          />
           <Text className="text-base font-semibold text-white">
-            {t("detail.call", { name: technician.name.split(" ")[0] })}
+            {user
+              ? t("detail.call", { name: technician.name.split(" ")[0] })
+              : t("detail.signInToCall")}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           className="flex-1 rounded-xl py-3.5 flex-row items-center justify-center gap-2"
-          style={{ backgroundColor: "#25D366" }}
-          onPress={handleWhatsApp}
+          style={{ backgroundColor: user ? "#25D366" : "#94A3B8" }}
+          onPress={user ? handleWhatsApp : () => promptSignIn()}
           activeOpacity={0.8}
         >
-          <Ionicons name="logo-whatsapp" size={20} color="#FFFFFF" />
-          <Text className="text-base font-semibold text-white">WhatsApp</Text>
+          <Ionicons
+            name={user ? "logo-whatsapp" : "lock-closed"}
+            size={20}
+            color="#FFFFFF"
+          />
+          <Text className="text-base font-semibold text-white">
+            {user ? "WhatsApp" : t("detail.signInToWhatsApp")}
+          </Text>
         </TouchableOpacity>
       </View>
 

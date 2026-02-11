@@ -382,9 +382,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   logoContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 30,
+    width: 200,
+    height: 200,
+    borderRadius: 50,
     backgroundColor: "rgba(255,255,255,0.14)",
     alignItems: "center",
     justifyContent: "center",
@@ -393,8 +393,9 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.08)",
   },
   logo: {
-    width: 90,
-    height: 90,
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
   },
   shimmer: {
     ...StyleSheet.absoluteFillObject,

@@ -3,6 +3,7 @@ import {
   Account,
   Databases,
   Storage,
+  Functions,
   ID,
   Query,
   Models,
@@ -24,6 +25,7 @@ const client = new Client()
 const account = new Account(client);
 const databases = new Databases(client);
 const storage = new Storage(client);
+const functions = new Functions(client);
 
 // ── Constants ──
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
@@ -32,6 +34,8 @@ const USERS_COLLECTION_ID =
 const TECHNICIANS_COLLECTION_ID =
   process.env.EXPO_PUBLIC_APPWRITE_TECHNICIANS_COLLECTION_ID!;
 const GALLERY_BUCKET_ID = process.env.EXPO_PUBLIC_APPWRITE_GALLERY_BUCKET_ID!;
+const ADMIN_FUNCTION_ID =
+  process.env.EXPO_PUBLIC_APPWRITE_ADMIN_FUNCTION_ID || "";
 
 // ── Auth helpers ──
 
@@ -230,6 +234,48 @@ export function getGalleryImageUrl(fileId: string): string {
 
 export async function deleteGalleryImage(fileId: string): Promise<void> {
   await storage.deleteFile(GALLERY_BUCKET_ID, fileId);
+}
+
+// ── Admin management (calls Appwrite Function) ──
+
+export interface AdminUser {
+  $id: string;
+  name: string;
+  email: string;
+}
+
+async function callAdminFunction(body: Record<string, string>): Promise<any> {
+  if (!ADMIN_FUNCTION_ID) {
+    throw new Error(
+      "Admin function not configured. Set EXPO_PUBLIC_APPWRITE_ADMIN_FUNCTION_ID in .env",
+    );
+  }
+  const execution = await functions.createExecution(
+    ADMIN_FUNCTION_ID,
+    JSON.stringify(body),
+    false,
+    "/",
+    "POST" as any,
+  );
+  const result = JSON.parse(execution.responseBody);
+  if (!result.ok) {
+    throw new Error(result.message || "Function call failed");
+  }
+  return result;
+}
+
+export async function listAdmins(): Promise<AdminUser[]> {
+  const result = await callAdminFunction({ action: "list" });
+  return result.admins || [];
+}
+
+export async function promoteToAdmin(email: string): Promise<AdminUser> {
+  const result = await callAdminFunction({ action: "promote", email });
+  return result.user;
+}
+
+export async function demoteFromAdmin(userId: string): Promise<void> {
+  await callAdminFunction({ action: "demote", userId });
 }
 
 export { client, account, databases, storage, Query };

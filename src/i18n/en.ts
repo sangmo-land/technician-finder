@@ -141,6 +141,21 @@ export default {
     resetFailed: "Failed to reset data.",
     noAccess:
       "You don't have permission to access this page. Only administrators can manage technicians.",
+    tabTechnicians: "Technicians",
+    tabAdmins: "Admins",
+    addNewAdmin: "Add New Admin",
+    addNewAdminDesc: "Enter the email of the user to promote",
+    emailPlaceholder: "user@email.com",
+    currentAdmins: "Current Admins",
+    noAdmins: "No admins found",
+    promoteSuccess: "User promoted to admin",
+    promoteFailed: "Failed to promote user. Make sure the email is correct.",
+    demoteConfirmTitle: "Remove Admin",
+    demoteConfirmMessage: "Remove admin access for {{name}}?",
+    demote: "Remove",
+    demoteFailed: "Failed to remove admin role",
+    cannotDemoteSelf: "You cannot remove your own admin access.",
+    you: "You",
   },
 
   // Favorites screen

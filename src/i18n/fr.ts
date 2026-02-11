@@ -143,6 +143,21 @@ export default {
     resetFailed: "Échec de la réinitialisation des données.",
     noAccess:
       "Vous n'avez pas la permission d'accéder à cette page. Seuls les administrateurs peuvent gérer les techniciens.",
+    tabTechnicians: "Techniciens",
+    tabAdmins: "Admins",
+    addNewAdmin: "Ajouter un admin",
+    addNewAdminDesc: "Entrez l'email de l'utilisateur à promouvoir",
+    emailPlaceholder: "utilisateur@email.com",
+    currentAdmins: "Admins actuels",
+    noAdmins: "Aucun admin trouvé",
+    promoteSuccess: "Utilisateur promu administrateur",
+    promoteFailed: "Impossible de promouvoir l'utilisateur. Vérifiez l'email.",
+    demoteConfirmTitle: "Retirer l'accès admin",
+    demoteConfirmMessage: "Retirer l'accès admin pour {{name}} ?",
+    demote: "Retirer",
+    demoteFailed: "Impossible de retirer le rôle admin",
+    cannotDemoteSelf: "Vous ne pouvez pas retirer votre propre accès admin.",
+    you: "Vous",
   },
 
   // Favorites screen

@@ -28,9 +28,15 @@ import {
   uploadGalleryImage,
   updateTechnician,
   updateUserProfile,
+  deleteTechnician,
   getGalleryImageUrl,
 } from "../../src/services/appwrite";
-import { InputField, SelectField, GalleryPicker } from "../../src/components";
+import {
+  InputField,
+  SelectField,
+  MultiSelectField,
+  GalleryPicker,
+} from "../../src/components";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -100,6 +106,32 @@ export default function ProfileScreen() {
             router.replace("/(auth)/sign-in");
           } catch {
             Alert.alert(t("common.error"), t("profile.signOutFailed"));
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleDeleteTechnicianProfile = () => {
+    Alert.alert(t("profile.deleteTechTitle"), t("profile.deleteTechMessage"), [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: t("common.delete"),
+        style: "destructive",
+        onPress: async () => {
+          if (!techDocId) return;
+          try {
+            await deleteTechnician(techDocId);
+            setIsTechnician(false);
+            setTechDocId(null);
+            setShowRegistration(false);
+            setIsEditing(false);
+            Alert.alert(
+              t("profile.deleteTechSuccess"),
+              t("profile.deleteTechSuccessMsg"),
+            );
+          } catch {
+            Alert.alert(t("common.error"), t("profile.deleteTechFailed"));
           }
         },
       },
@@ -408,6 +440,20 @@ export default function ProfileScreen() {
                     {t("profile.editMyProfile")}
                   </Text>
                 </TouchableOpacity>
+                <TouchableOpacity
+                  className="flex-row items-center justify-center rounded-xl py-3 gap-2"
+                  style={{ backgroundColor: "#FEE2E2" }}
+                  onPress={handleDeleteTechnicianProfile}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#DC2626" />
+                  <Text
+                    className="text-sm font-semibold"
+                    style={{ color: "#DC2626" }}
+                  >
+                    {t("profile.deleteTechProfile")}
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
           </View>
@@ -455,24 +501,15 @@ export default function ProfileScreen() {
               />
 
               {/* Skills */}
-              <SelectField
+              <MultiSelectField
                 label={t("profile.skillTrade")}
-                value={
-                  skills.length > 0
-                    ? skills.map((s) => t(`skills.${s}`)).join(", ")
-                    : null
-                }
-                options={SKILLS.map((s) => t(`skills.${s}`))}
-                onSelect={(val) => {
-                  const match = SKILLS.find((s) => t(`skills.${s}`) === val);
-                  if (match && !skills.includes(match)) {
-                    setSkills([...skills, match]);
-                  } else if (match && skills.includes(match)) {
-                    setSkills(skills.filter((s) => s !== match));
-                  }
-                }}
+                selectedValues={skills}
+                options={SKILLS}
+                onSelectionChange={setSkills}
+                displayLabel={(s) => t(`skills.${s}`)}
                 placeholder={t("profile.selectSkill")}
                 error={formErrors.skills}
+                max={3}
               />
 
               {/* Experience */}

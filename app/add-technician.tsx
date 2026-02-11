@@ -20,7 +20,12 @@ import {
   AVAILABILITY_OPTIONS,
 } from "../src/types";
 import { addTechnician } from "../src/services/storage";
-import { InputField, SelectField, GalleryPicker } from "../src/components";
+import {
+  InputField,
+  SelectField,
+  MultiSelectField,
+  GalleryPicker,
+} from "../src/components";
 
 interface FormErrors {
   name?: string;
@@ -159,24 +164,15 @@ export default function AddTechnicianScreen() {
             error={errors.name}
           />
 
-          <SelectField
+          <MultiSelectField
             label={t("form.skillTrade")}
-            value={
-              skills.length > 0
-                ? skills.map((s) => t(`skills.${s}`)).join(", ")
-                : null
-            }
-            options={SKILLS.map((s) => t(`skills.${s}`))}
-            onSelect={(val) => {
-              const match = SKILLS.find((s) => t(`skills.${s}`) === val);
-              if (match && !skills.includes(match)) {
-                setSkills([...skills, match]);
-              } else if (match && skills.includes(match)) {
-                setSkills(skills.filter((s) => s !== match));
-              }
-            }}
+            selectedValues={skills}
+            options={SKILLS}
+            onSelectionChange={setSkills}
+            displayLabel={(s) => t(`skills.${s}`)}
             placeholder={t("form.selectSkill")}
             error={errors.skills}
+            max={3}
           />
 
           <InputField

@@ -219,6 +219,13 @@ export default {
     selectOption: "Select an option",
   },
 
+  // Multi-select field
+  multiSelect: {
+    selected: "selected",
+    maxHint: "Select up to {{max}}",
+    done: "Done",
+  },
+
   // Gallery
   gallery: {
     title: "Work Gallery",
@@ -288,6 +295,13 @@ export default {
     updateSuccess: "Profile Updated",
     updateSuccessMsg: "Your technician profile has been updated successfully.",
     updateFailed: "Update failed. Please try again.",
+    deleteTechProfile: "Delete Technician Profile",
+    deleteTechTitle: "Delete Technician Profile",
+    deleteTechMessage:
+      "Are you sure you want to delete your technician profile? This action cannot be undone.",
+    deleteTechSuccess: "Profile Deleted",
+    deleteTechSuccessMsg: "Your technician profile has been removed.",
+    deleteTechFailed: "Failed to delete profile. Please try again.",
   },
 
   // Auth
@@ -324,6 +338,7 @@ export default {
   notifications: {
     newUserTitle: "New User Joined! \uD83C\uDF89",
     newUserBody: "{{name}} just joined Technician Finder",
-    newUserBodyWithLocation: "{{name}} from {{location}} just joined Technician Finder",
+    newUserBodyWithLocation:
+      "{{name}} from {{location}} just joined Technician Finder",
   },
 };

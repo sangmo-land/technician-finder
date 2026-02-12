@@ -85,15 +85,19 @@ export async function signInWithGoogle(): Promise<
   // Generate redirect URI using Linking — works in both dev and production
   const redirectUri = Linking.createURL("auth");
 
-  const response = account.createOAuth2Token(
+  const loginUrl = await account.createOAuth2Token(
     OAuthProvider.Google,
     redirectUri,
     redirectUri,
   );
 
+  if (!loginUrl) {
+    throw new Error("Failed to create OAuth2 token URL");
+  }
+
   // Open the OAuth URL in the system browser
   const browserResult = await WebBrowser.openAuthSessionAsync(
-    (response as any).toString(),
+    loginUrl.toString(),
     redirectUri,
   );
 

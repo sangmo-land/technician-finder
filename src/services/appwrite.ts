@@ -83,8 +83,13 @@ export async function signInWithGoogle(): Promise<
     /* no session to delete */
   }
 
-  // Generate redirect URI using makeRedirectUri with localhost for Appwrite validation
-  const deepLink = new URL(makeRedirectUri({ preferLocalhost: true }));
+  // Generate redirect URI using makeRedirectUri with the Appwrite callback scheme
+  const deepLink = new URL(
+    makeRedirectUri({
+      scheme: `appwrite-callback-${process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID}`,
+      preferLocalhost: true,
+    }),
+  );
   const scheme = `${deepLink.protocol}//`;
 
   const loginUrl = await account.createOAuth2Token(

@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": ["technician-finder", "appwrite-callback-5b165245-6288-4a9e-8c58-e70320c6256e"],
+    "scheme": ["technician-finder", "appwrite-callback-69877dfb002b6b81d969"],
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {

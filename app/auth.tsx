@@ -1,31 +1,41 @@
 import { useEffect } from "react";
 import { View, ActivityIndicator, Text } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { account } from "../src/services/appwrite";
 
 /**
  * Deep-link receiver for OAuth callbacks.
- * Handles: technician-finder://auth?secret=...&userId=...
+ * Handles: appwrite-callback-<PROJECT_ID>://localhost
  *
  * After the browser redirects back, this screen confirms the session
  * and navigates the user into the app.
  */
 export default function AuthCallbackScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ secret?: string; userId?: string }>();
 
   useEffect(() => {
-    const checkSession = async () => {
+    const handleCallback = async () => {
       try {
+        // If we received OAuth params, create a session first
+        if (params.secret && params.userId) {
+          try {
+            await account.deleteSession("current");
+          } catch {
+            /* no session to delete */
+          }
+          await account.createSession(params.userId, params.secret);
+        }
+
+        // Verify session exists
         await account.get();
-        // Session exists — go to main app
         router.replace("/(tabs)");
       } catch {
-        // No valid session — send back to sign-in
         router.replace("/(auth)/sign-in");
       }
     };
 
-    checkSession();
+    handleCallback();
   }, []);
 
   return (

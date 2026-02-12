@@ -11,6 +11,7 @@ import {
 } from "react-native-appwrite";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
+import { makeRedirectUri } from "expo-auth-session";
 import {
   UserProfile,
   UserProfileFormData,
@@ -82,13 +83,14 @@ export async function signInWithGoogle(): Promise<
     /* no session to delete */
   }
 
-  // Generate redirect URI using Linking — works in both dev and production
-  const redirectUri = Linking.createURL("auth");
+  // Generate redirect URI using makeRedirectUri with localhost for Appwrite validation
+  const deepLink = new URL(makeRedirectUri({ preferLocalhost: true }));
+  const scheme = `${deepLink.protocol}//`;
 
   const loginUrl = await account.createOAuth2Token(
     OAuthProvider.Google,
-    redirectUri,
-    redirectUri,
+    `${deepLink}`,
+    `${deepLink}`,
   );
 
   if (!loginUrl) {
@@ -97,8 +99,8 @@ export async function signInWithGoogle(): Promise<
 
   // Open the OAuth URL in the system browser
   const browserResult = await WebBrowser.openAuthSessionAsync(
-    loginUrl.toString(),
-    redirectUri,
+    `${loginUrl}`,
+    scheme,
   );
 
   if (browserResult.type !== "success" || !browserResult.url) {

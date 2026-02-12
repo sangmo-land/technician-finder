@@ -61,7 +61,7 @@ export default function SignInScreen() {
     setGoogleLoading(true);
     try {
       await signInWithGoogle();
-      router.replace("/(tabs)");
+      // Navigation is handled by AuthContext detecting the new session
     } catch (error: any) {
       if (!error?.message?.includes("cancelled")) {
         Alert.alert(t("common.error"), error?.message || t("auth.googleFailed"));

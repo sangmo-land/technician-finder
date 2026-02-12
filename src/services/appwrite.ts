@@ -18,6 +18,9 @@ import {
   TechnicianFormData,
 } from "../types";
 
+// Complete any pending auth sessions on app resume
+WebBrowser.maybeCompleteAuthSession();
+
 const client = new Client()
   .setEndpoint(process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT!)
   .setProject(process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!);
@@ -79,8 +82,8 @@ export async function signInWithGoogle(): Promise<
     /* no session to delete */
   }
 
-  // For production builds, use the app scheme
-  const redirectUri = "technician-finder://";
+  // Generate redirect URI using Linking — works in both dev and production
+  const redirectUri = Linking.createURL("auth");
 
   const response = account.createOAuth2Token(
     OAuthProvider.Google,
@@ -88,7 +91,7 @@ export async function signInWithGoogle(): Promise<
     redirectUri,
   );
 
-  // Open the OAuth URL in the browser
+  // Open the OAuth URL in the system browser
   const browserResult = await WebBrowser.openAuthSessionAsync(
     (response as any).toString(),
     redirectUri,

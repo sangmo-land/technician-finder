@@ -5,7 +5,10 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": ["technician-finder", "appwrite-callback-69877dfb002b6b81d969"],
+    "scheme": [
+      "technician-finder",
+      "appwrite-callback-69877dfb002b6b81d969"
+    ],
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -15,7 +18,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.technicianfinder.app"
+      "bundleIdentifier": "com.technicianfinder.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {

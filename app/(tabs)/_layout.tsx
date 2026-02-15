@@ -1,12 +1,17 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../src/constants/colors";
 import { useAuth } from "../../src/contexts/AuthContext";
 
 export default function TabLayout() {
   const { t } = useTranslation();
   const { isAdmin } = useAuth();
+  const insets = useSafeAreaInsets();
+
+  // Ensure tab bar clears system navigation buttons
+  const tabBarHeight = 65 + insets.bottom;
 
   return (
     <Tabs
@@ -26,9 +31,9 @@ export default function TabLayout() {
           backgroundColor: "#FFFFFF",
           borderTopColor: "#E2E8F0",
           borderTopWidth: 1,
-          height: 65,
+          height: tabBarHeight,
           paddingTop: 6,
-          paddingBottom: 8,
+          paddingBottom: 8 + insets.bottom,
         },
         tabBarLabelStyle: {
           fontSize: 12,

@@ -7,7 +7,15 @@ import {
   signOut as appwriteSignOut,
   signInWithGoogle as appwriteGoogleSignIn,
   createAnonymousSession,
+  handleOAuthCallback,
+  isOAuthCallbackUrl,
 } from "../services/appwrite";
+import {
+  registerPushToken,
+  unregisterPushToken,
+  setupNotifications,
+} from "../services/notifications";
+import { invalidateTechnicianCache } from "../services/storage";
 
 interface AuthContextType {
   user: Models.User<Models.Preferences> | null;
@@ -17,6 +25,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  handleDeepLinkAuth: (url: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,9 +36,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
   const [isLoading, setIsLoading] = useState(true);
 
+  // Compute isAdmin once
+  const isAdmin = Array.isArray(user?.labels) && user.labels.includes("admin");
+
   useEffect(() => {
     checkUser();
   }, []);
+
+  // Register push token when user logs in
+  useEffect(() => {
+    if (user?.email) {
+      // Setup notifications and register push token
+      setupNotifications().then((granted) => {
+        if (granted) {
+          registerPushToken(user.$id, isAdmin);
+        }
+      });
+    }
+  }, [user?.$id, isAdmin]);
 
   async function checkUser() {
     try {
@@ -50,25 +74,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function handleSignIn(email: string, password: string) {
+    // Invalidate cache to force fresh data fetch with new auth context
+    invalidateTechnicianCache();
     const loggedIn = await appwriteSignIn(email, password);
     setUser(loggedIn);
   }
 
   async function handleSignUp(email: string, password: string, name: string) {
+    // Invalidate cache to force fresh data fetch with new auth context
+    invalidateTechnicianCache();
     const newUser = await appwriteSignUp(email, password, name);
     setUser(newUser);
   }
 
   async function handleSignOut() {
+    // Unregister push token before signing out
+    await unregisterPushToken();
     await appwriteSignOut();
     setUser(null);
+    // Invalidate cache to force fresh data fetch with anonymous context
+    invalidateTechnicianCache();
     // Re-create anonymous session for guest browsing
     await createAnonymousSession();
   }
 
   async function handleGoogleSignIn() {
+    // Invalidate cache to force fresh data fetch with new auth context
+    invalidateTechnicianCache();
     const googleUser = await appwriteGoogleSignIn();
     setUser(googleUser);
+  }
+
+  /**
+   * Handle OAuth callback from deep link (for cold start scenarios).
+   * Returns true if the URL was handled successfully, false otherwise.
+   */
+  async function handleDeepLinkAuth(url: string): Promise<boolean> {
+    if (!isOAuthCallbackUrl(url)) {
+      return false;
+    }
+
+    // Invalidate cache to force fresh data fetch with new auth context
+    invalidateTechnicianCache();
+    const oauthUser = await handleOAuthCallback(url);
+    if (oauthUser && oauthUser.email) {
+      setUser(oauthUser);
+      return true;
+    }
+    return false;
   }
 
   return (
@@ -76,11 +129,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         isLoading,
-        isAdmin: Array.isArray(user?.labels) && user.labels.includes("admin"),
+        isAdmin,
         signIn: handleSignIn,
         signUp: handleSignUp,
         signOut: handleSignOut,
         signInWithGoogle: handleGoogleSignIn,
+        handleDeepLinkAuth,
       }}
     >
       {children}

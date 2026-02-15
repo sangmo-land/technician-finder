@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   View,
   FlatList,
@@ -14,6 +20,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../src/contexts/AuthContext";
 import { TechnicianWithProfile, Skill, SortOption } from "../../src/types";
 import {
   getAllTechnicians,
@@ -43,6 +50,8 @@ export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
+  const prevUserIdRef = useRef<string | null>(null);
   const [technicians, setTechnicians] = useState<TechnicianWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -55,13 +64,15 @@ export default function HomeScreen() {
     [],
   );
 
-  const loadTechnicians = useCallback(async () => {
+  const loadTechnicians = useCallback(async (showLoadingState = false) => {
     try {
-      // Show cached data instantly while fetching fresh data
-      const cached = getCachedTechnicians();
-      if (cached && loading) {
-        setTechnicians(cached);
-        setLoading(false);
+      // Only show cached data if not forcing a fresh load
+      if (!showLoadingState) {
+        const cached = getCachedTechnicians();
+        if (cached && cached.length > 0) {
+          setTechnicians(cached);
+          setLoading(false);
+        }
       }
       await initializeStorage();
       const [data, recent] = await Promise.all([
@@ -83,6 +94,21 @@ export default function HomeScreen() {
       loadTechnicians();
     }, [loadTechnicians]),
   );
+
+  // Reload data when user signs in or out to ensure fresh profiles
+  useEffect(() => {
+    const currentUserId = user?.$id ?? null;
+    if (
+      prevUserIdRef.current !== null &&
+      prevUserIdRef.current !== currentUserId
+    ) {
+      // User changed - reset state and reload fresh data
+      setLoading(true);
+      setTechnicians([]);
+      loadTechnicians(true);
+    }
+    prevUserIdRef.current = currentUserId;
+  }, [user?.$id, loadTechnicians]);
 
   const filteredTechnicians = useMemo(() => {
     let filtered = technicians;

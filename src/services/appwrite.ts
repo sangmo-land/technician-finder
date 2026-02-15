@@ -22,6 +22,9 @@ import {
 // Complete any pending auth sessions on app resume
 WebBrowser.maybeCompleteAuthSession();
 
+// OAuth callback scheme for detecting deep links
+const OAUTH_CALLBACK_SCHEME = `appwrite-callback-${process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID}`;
+
 const client = new Client()
   .setEndpoint(process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT!)
   .setProject(process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!);
@@ -124,6 +127,54 @@ export async function signInWithGoogle(): Promise<
   // Create session from the OAuth2 token
   await account.createSession(userId, secret);
   return account.get();
+}
+
+/**
+ * Check if a URL is an OAuth callback URL.
+ * Handles formats like:
+ * - appwrite-callback-<projectId>://localhost?secret=...&userId=...
+ * - appwrite-callback-<projectId>://?secret=...&userId=...
+ */
+export function isOAuthCallbackUrl(url: string | null): boolean {
+  if (!url) return false;
+  // Check if URL starts with our OAuth callback scheme
+  // The scheme format is: appwrite-callback-<projectId>://
+  return url.startsWith(`${OAUTH_CALLBACK_SCHEME}://`) || url.startsWith(`${OAUTH_CALLBACK_SCHEME}:`);
+}
+
+/**
+ * Handle OAuth callback when app is cold-started from a deep link.
+ * This is needed because on some phones, when the app is killed during the OAuth
+ * flow and then cold-started from the callback URL, the WebBrowser.openAuthSessionAsync
+ * never returns and we need to handle the session creation manually.
+ */
+export async function handleOAuthCallback(
+  url: string,
+): Promise<Models.User<Models.Preferences> | null> {
+  try {
+    const parsedUrl = new URL(url);
+    const secret = parsedUrl.searchParams.get("secret");
+    const userId = parsedUrl.searchParams.get("userId");
+
+    if (!secret || !userId) {
+      console.log("OAuth callback missing secret or userId");
+      return null;
+    }
+
+    // Delete any existing session first
+    try {
+      await account.deleteSession("current");
+    } catch {
+      /* no session to delete */
+    }
+
+    // Create session from the OAuth2 token
+    await account.createSession(userId, secret);
+    return await account.get();
+  } catch (error) {
+    console.error("Error handling OAuth callback:", error);
+    return null;
+  }
 }
 
 export async function signOut(): Promise<void> {

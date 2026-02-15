@@ -1,42 +1,30 @@
 import { useEffect } from "react";
 import { View, ActivityIndicator, Text } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { account } from "../src/services/appwrite";
+import { useRouter } from "expo-router";
+import { useAuth } from "../src/contexts/AuthContext";
 
 /**
- * Deep-link receiver for OAuth callbacks.
- * Handles: appwrite-callback-<PROJECT_ID>://localhost
+ * Fallback OAuth callback screen.
  *
- * After the browser redirects back, this screen confirms the session
- * and navigates the user into the app.
+ * Note: OAuth callbacks are now primarily handled in _layout.tsx via deep link
+ * interception. This screen serves as a fallback that simply checks if the user
+ * is already authenticated and redirects accordingly.
  */
 export default function AuthCallbackScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ secret?: string; userId?: string }>();
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    const handleCallback = async () => {
-      try {
-        // If we received OAuth params, create a session first
-        if (params.secret && params.userId) {
-          try {
-            await account.deleteSession("current");
-          } catch {
-            /* no session to delete */
-          }
-          await account.createSession(params.userId, params.secret);
-        }
+    // Wait for auth state to be determined
+    if (isLoading) return;
 
-        // Verify session exists
-        await account.get();
-        router.replace("/(tabs)");
-      } catch {
-        router.replace("/(auth)/sign-in");
-      }
-    };
-
-    handleCallback();
-  }, []);
+    // If user is logged in, go to main app; otherwise go to sign-in
+    if (user) {
+      router.replace("/(tabs)");
+    } else {
+      router.replace("/(auth)/sign-in");
+    }
+  }, [user, isLoading, router]);
 
   return (
     <View

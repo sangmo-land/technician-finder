@@ -1,10 +1,11 @@
 import "../global.css";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { View } from "react-native";
 import * as ExpoSplashScreen from "expo-splash-screen";
+import * as Linking from "expo-linking";
 import { colors } from "../src/constants/colors";
 import { initI18n } from "../src/i18n";
 import { useTranslation } from "react-i18next";
@@ -12,7 +13,7 @@ import i18next from "i18next";
 import { AuthProvider, useAuth } from "../src/contexts/AuthContext";
 import SplashScreen from "../src/components/SplashScreen";
 import { loadCustomSkills, getAllSkillDocs } from "../src/services/skills";
-import { ensureSession } from "../src/services/appwrite";
+import { ensureSession, isOAuthCallbackUrl } from "../src/services/appwrite";
 import {
   setupNotifications,
   subscribeToNewUsers,
@@ -24,9 +25,48 @@ ExpoSplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootNavigator() {
   const { t } = useTranslation();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, handleDeepLinkAuth } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const oauthHandledRef = useRef(false);
+  const [oauthPending, setOauthPending] = useState(false);
+
+  // ── Handle OAuth callback deep links (for cold start scenarios) ──
+  useEffect(() => {
+    // Handle OAuth callback URLs when app is cold-started from a deep link
+    const handleUrl = async (url: string | null) => {
+      if (!url || oauthHandledRef.current) return;
+
+      if (isOAuthCallbackUrl(url)) {
+        oauthHandledRef.current = true;
+        setOauthPending(true);
+        try {
+          const success = await handleDeepLinkAuth(url);
+          if (success) {
+            // Navigate to main app after successful OAuth
+            router.replace("/(tabs)");
+          } else {
+            // OAuth failed, go to sign-in
+            router.replace("/(auth)/sign-in");
+          }
+        } finally {
+          setOauthPending(false);
+        }
+      }
+    };
+
+    // Check for initial URL (cold start)
+    Linking.getInitialURL().then(handleUrl);
+
+    // Listen for URL events (app already running)
+    const subscription = Linking.addEventListener("url", (event) => {
+      handleUrl(event.url);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [handleDeepLinkAuth, router]);
 
   // ── Notifications: request permission + subscribe to new users ──
   useEffect(() => {
@@ -48,7 +88,8 @@ function RootNavigator() {
   }, [user]);
 
   useEffect(() => {
-    if (isLoading) return;
+    // Don't navigate while auth is loading or OAuth is being processed
+    if (isLoading || oauthPending) return;
 
     const inAuthGroup = segments[0] === "(auth)";
 
@@ -63,7 +104,7 @@ function RootNavigator() {
       // Allow unauthenticated users to browse tabs and technician details
       router.replace("/(tabs)");
     }
-  }, [user, isLoading, segments]);
+  }, [user, isLoading, oauthPending, segments]);
 
   return (
     <>
@@ -121,8 +162,15 @@ export default function RootLayout() {
 
   useEffect(() => {
     initI18n().then(async () => {
-      // Ensure a session exists before making any Appwrite calls
-      await ensureSession();
+      // Check if we're launching from an OAuth callback - if so, skip ensureSession
+      // to avoid creating an anonymous session that interferes with OAuth
+      const initialUrl = await Linking.getInitialURL();
+      const isOAuthLaunch = isOAuthCallbackUrl(initialUrl);
+
+      if (!isOAuthLaunch) {
+        // Only ensure anonymous session if not handling OAuth callback
+        await ensureSession();
+      }
 
       // Load skills from Appwrite and register their i18n translations
       try {
